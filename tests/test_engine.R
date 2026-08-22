@@ -199,6 +199,68 @@ expect("provenans alanlari inputs icinde kayitli",
          all(c("seed", "horizon", "base_year", "theta_sdlog") %in%
                names(s$inputs)) })
 
+cat("\n== calculator.R ==\n")
+est <- cbam_estimate(quantity = 1000, ei_direct = 1.9, benchmark = 1.288,
+                     year = 2034, carbon_price = 80, fx_rate = 48,
+                     uncertainty = FALSE)
+expect("cikti cbam_estimate sinifinda", inherits(est, "cbam_estimate"))
+expect("2034'te ucretsiz tahsisat sifir",
+       est$deterministic$free_allocation == 0)
+expect("2034'te tum gomulu emisyon vergilenir",
+       est$deterministic$certificates == 1900)
+expect("maliyet = sertifika * fiyat",
+       est$deterministic$cost_eur == 1900 * 80)
+expect("yerel maliyet kur ile cevrilir",
+       est$deterministic$cost_local == 1900 * 80 * 48)
+expect("ton basina yuk dogru",
+       abs(est$deterministic$cost_per_tonne - 152) < 1e-9)
+expect("vergilenen oran 2034'te %100",
+       abs(est$deterministic$taxed_share - 1) < 1e-12)
+expect("uncertainty = FALSE simulasyon uretmez",
+       is.null(est$simulation))
+
+est26 <- cbam_estimate(1000, 1.9, 1.288, year = 2026, carbon_price = 80,
+                       uncertainty = FALSE)
+expect("2026 ucretsiz tahsisati benchmark uzerinden",
+       abs(est26$deterministic$free_allocation - 1.288 * 1000 * 0.975) < 1e-9)
+expect("2026'da benchmark ustu firma yine de oder",
+       abs(est26$deterministic$certificates - (1900 - 1255.8)) < 1e-9)
+expect("2026'da emisyonun ucte birinden fazlasi vergilenir",
+       est26$deterministic$taxed_share > 0.33)
+
+expect("mensede odenen karbon dusulur",
+       { e <- cbam_estimate(1000, 1.9, 1.288, year = 2034,
+                            carbon_paid_origin = 400, uncertainty = FALSE)
+         e$deterministic$certificates == 1500 })
+expect("de minimis esigi altinda yukumluluk yok",
+       { e <- cbam_estimate(20, 1.9, 1.288, year = 2034, uncertainty = FALSE)
+         e$deterministic$de_minimis &&
+           e$deterministic$certificates == 0 &&
+           e$deterministic$cost_eur == 0 })
+expect("dolayli emisyon istege bagli dahil",
+       { e <- cbam_estimate(1000, 1.9, 1.288, year = 2034, ei_indirect = 0.5,
+                            include_indirect = TRUE, uncertainty = FALSE)
+         e$deterministic$embedded == 2400 })
+expect("belirsizlik istendiginde simulasyon uretilir",
+       { e <- cbam_estimate(1000, 1.9, 1.288, year = 2030, n_sims = 2000,
+                            seed = 1)
+         inherits(e$simulation, "cbam_mc") && nrow(e$simulation$draws) == 2000 })
+expect("deterministik sonuc simulasyon medyanina yakin duruyor",
+       { e <- cbam_estimate(1000, 1.9, 1.288, year = 2026, carbon_price = 80,
+                            n_sims = 20000, seed = 1)
+         d <- e$deterministic$cost_eur
+         m <- median(e$simulation$draws$cost_eur)
+         abs(m - d) / d < 0.25 })
+expect_error("negatif miktar reddedilir",
+             cbam_estimate(-5, 1.9, 1.288, uncertainty = FALSE))
+expect_error("negatif karbon fiyati reddedilir",
+             cbam_estimate(1000, 1.9, 1.288, carbon_price = -1,
+                           uncertainty = FALSE))
+expect_error("sifir kur reddedilir",
+             cbam_estimate(1000, 1.9, 1.288, fx_rate = 0, uncertainty = FALSE))
+expect_error("vektor girdi reddedilir",
+             cbam_estimate(c(1000, 2000), 1.9, 1.288, uncertainty = FALSE))
+
 cat(sprintf("\n=====================================\n"))
 cat(sprintf("Toplam: %d gecti, %d kaldi\n", passed, failed))
 cat(sprintf("=====================================\n"))

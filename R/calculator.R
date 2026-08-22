@@ -1,0 +1,236 @@
+#  Hesap Makinesi Katmani
+#
+#  Motor katmani (certificates_due, run_cbam_mc, ...) saf hesap yapar ve
+#  ham sayi dondurur. Bu katman kullanicinin girdigi degerleri alip tek bir
+#  okunabilir cevaba cevirir: kac sertifika, kac EUR, kac TRY, ton basina ne.
+#
+#  Iki cevap birden verilir:
+#    (1) Deterministik hesap - "hesap makinesi" cevabi. Her adimi gorunur,
+#        elle kagit uzerinde dogrulanabilir.
+#    (2) Belirsizlik araligi  - ayni girdilerin karbon fiyati ve kur
+#        dalgalanmasi altinda ne kadar oynadigi.
+#
+#  (1) olmadan arac guvenilmez gorunur; (2) olmadan yaniltici olur.
+
+#' CBAM maliyet hesabi
+#'
+#' @param quantity AB'ye yillik ihracat miktari (ton).
+#' @param ei_direct Dogrudan (Scope 1) emisyon yogunlugu (tCO2e / ton).
+#' @param benchmark AB ETS urun benchmark'i (tCO2e / ton).
+#' @param year Yukumluluk yili.
+#' @param carbon_price EU ETS sertifika fiyati (EUR / tCO2e).
+#' @param fx_rate Doviz kuru (TRY / EUR). 1 birakilirsa yalnizca EUR raporlanir.
+#' @param carbon_paid_origin Mense ulkede fiilen odenmis karbon (tCO2e).
+#' @param ei_indirect Dolayli (elektrik) emisyon yogunlugu (tCO2e / ton).
+#' @param include_indirect Dolayli emisyonlar hesaba katilsin mi? CBAM'de
+#'   demir-celik icin gecis doneminde raporlanir ancak vergilendirilmez.
+#' @param uncertainty Belirsizlik araligi da hesaplansin mi?
+#' @param theta_sdlog Firma teknoloji heterojenligi (log-olcekte std. sapma).
+#' @param base_year Karbon fiyati ve kurun gozlendigi yil; zaman ufku
+#'   \code{year - base_year} olarak turetilir.
+#' @param n_sims Belirsizlik hesabindaki simulasyon sayisi.
+#' @param seed Tekrarlanabilirlik icin rastgele sayi tohumu.
+#' @param ... \code{run_cbam_mc()} uzerinden \code{simulate_market()}'e
+#'   aktarilan ek parametreler (carbon_sigma, fx_mu, fx_sigma, rho).
+#' @return \code{cbam_estimate} sinifinda liste.
+cbam_estimate <- function(quantity,
+                          ei_direct,
+                          benchmark,
+                          year = 2026,
+                          carbon_price = 80,
+                          fx_rate = 1,
+                          carbon_paid_origin = 0,
+                          ei_indirect = 0,
+                          include_indirect = FALSE,
+                          uncertainty = TRUE,
+                          theta_sdlog = 0.20,
+                          base_year = 2026,
+                          n_sims = 50000,
+                          seed = 2026,
+                          ...) {
+  stopifnot(is.numeric(quantity), is.numeric(ei_direct), is.numeric(benchmark))
+  if (length(quantity) != 1 || length(ei_direct) != 1 || length(benchmark) != 1) {
+    stop("quantity, ei_direct ve benchmark tek deger olmali.")
+  }
+  if (quantity < 0) stop("quantity negatif olamaz.")
+  if (ei_direct < 0) stop("ei_direct negatif olamaz.")
+  if (benchmark < 0) stop("benchmark negatif olamaz.")
+  if (carbon_price < 0) stop("carbon_price negatif olamaz.")
+  if (fx_rate <= 0) stop("fx_rate pozitif olmali.")
+
+  # --- Deterministik hesap ---------------------------------------------
+  ei_total <- if (isTRUE(include_indirect)) ei_direct + ei_indirect else ei_direct
+  embedded <- embedded_emissions(quantity, ei_direct, ei_indirect,
+                                 include_indirect = include_indirect)
+  factor_y <- cbam_phase_in_factor(year)
+  free_allocation <- benchmark * quantity * (1 - factor_y)
+  certificates <- certificates_due(
+    embedded           = embedded,
+    quantity           = quantity,
+    benchmark          = benchmark,
+    cbam_factor        = factor_y,
+    carbon_paid_origin = carbon_paid_origin
+  )
+  cost <- cbam_cost(certificates, carbon_price, fx_rate)
+
+  # De minimis muafiyeti: yillik 50 tCO2e altindaki gomulu emisyon
+  # CBAM yukumlulugu dogurmaz.
+  exempt <- is_de_minimis(embedded)
+  if (exempt) {
+    certificates <- 0
+    cost <- list(cost_eur = 0, cost_local = 0)
+  }
+
+  # --- Belirsizlik araligi ---------------------------------------------
+  sim <- NULL
+  if (isTRUE(uncertainty) && !exempt && quantity > 0) {
+    sim <- run_cbam_mc(
+      n_sims             = n_sims,
+      quantity           = quantity,
+      ei_sector          = ei_total,
+      theta_sdlog        = theta_sdlog,
+      benchmark          = benchmark,
+      year               = year,
+      base_year          = base_year,
+      carbon_price_0     = carbon_price,
+      fx_0               = fx_rate,
+      carbon_paid_origin = carbon_paid_origin,
+      seed               = seed,
+      ...
+    )
+  }
+
+  structure(
+    list(
+      deterministic = list(
+        embedded        = embedded,
+        free_allocation = free_allocation,
+        certificates    = certificates,
+        cost_eur        = cost$cost_eur,
+        cost_local      = cost$cost_local,
+        cost_per_tonne  = if (quantity > 0) cost$cost_eur / quantity else 0,
+        taxed_share     = if (embedded > 0) certificates / embedded else 0,
+        de_minimis      = exempt
+      ),
+      simulation = sim,
+      inputs = list(
+        quantity = quantity, ei_direct = ei_direct, ei_indirect = ei_indirect,
+        include_indirect = include_indirect, ei_total = ei_total,
+        benchmark = benchmark, year = year, cbam_factor = factor_y,
+        carbon_price = carbon_price, fx_rate = fx_rate,
+        carbon_paid_origin = carbon_paid_origin,
+        theta_sdlog = theta_sdlog, base_year = base_year,
+        horizon = max(year - base_year, 0), n_sims = n_sims, seed = seed
+      )
+    ),
+    class = "cbam_estimate"
+  )
+}
+
+#' @export
+print.cbam_estimate <- function(x, ...) {
+  i <- x$inputs
+  d <- x$deterministic
+  line <- strrep("=", 68)
+  thin <- strrep("-", 68)
+
+  cat("\n"); cat(line, "\n")
+  cat("  CBAM MALIYET HESABI\n")
+  cat(line, "\n\n")
+
+  cat("GIRDILER\n")
+  cat(sprintf("  Ihracat miktari        : %15s ton/yil\n", fmt_num(i$quantity)))
+  cat(sprintf("  Emisyon yogunlugu      : %15s tCO2e/ton  (dogrudan)\n",
+              fmt_num(i$ei_direct, 3)))
+  if (i$include_indirect) {
+    cat(sprintf("  + dolayli (elektrik)   : %15s tCO2e/ton\n",
+                fmt_num(i$ei_indirect, 3)))
+  }
+  cat(sprintf("  AB ETS benchmark       : %15s tCO2e/ton\n",
+              fmt_num(i$benchmark, 3)))
+  cat(sprintf("  Yukumluluk yili        : %15d\n", i$year))
+  cat(sprintf("  Karbon fiyati          : %15s EUR/tCO2e\n",
+              fmt_num(i$carbon_price, 2)))
+  if (i$fx_rate != 1) {
+    cat(sprintf("  Doviz kuru             : %15s TRY/EUR\n",
+                fmt_num(i$fx_rate, 2)))
+  }
+
+  if (isTRUE(d$de_minimis)) {
+    cat("\n"); cat(thin, "\n")
+    cat("  DE MINIMIS MUAFIYETI\n\n")
+    cat(sprintf("  Gomulu emisyon %s tCO2e, 50 tCO2e esiginin altinda.\n",
+                fmt_num(d$embedded)))
+    cat("  CBAM yukumlulugu dogmuyor; sertifika alinmasi gerekmiyor.\n")
+    cat(line, "\n\n")
+    return(invisible(x))
+  }
+
+  # Her satir: etiket | acik formul | sonuc. Formulun gorunur olmasi
+  # bilincli bir tercih - kapali kutu araclardan ayrisan nokta bu.
+  satir <- function(etiket, formul, deger, birim) {
+    cat(sprintf("  %-21s %-24s = %13s %s\n", etiket, formul, deger, birim))
+  }
+  kalan_faktor <- 1 - i$cbam_factor
+
+  cat("\nHESAP\n")
+  satir("Gomulu emisyon",
+        sprintf("%s x %s", fmt_num(i$quantity), fmt_num(i$ei_total, 3)),
+        fmt_num(d$embedded), "tCO2e")
+  satir("Ucretsiz tahsisat",
+        sprintf("%s x %s x %s", fmt_num(i$benchmark, 3),
+                fmt_num(i$quantity), fmt_num(kalan_faktor, 3)),
+        paste0("-", fmt_num(d$free_allocation)), "tCO2e")
+  cat(sprintf("  %-21s (%s = 1 - CBAM faktoru %s)\n", "",
+              fmt_num(kalan_faktor, 3), fmt_num(i$cbam_factor, 3)))
+  if (i$carbon_paid_origin > 0) {
+    satir("Mensede odenen karbon", "",
+          paste0("-", fmt_num(i$carbon_paid_origin)), "tCO2e")
+  }
+  cat("  ", thin, "\n", sep = "")
+  satir("SERTIFIKA YUKUMLULUGU", "", fmt_num(d$certificates), "tCO2e")
+  cat(sprintf("  %-21s %-24s   %13s\n", "", "",
+              sprintf("(emisyonun %%%s'i)", fmt_num(100 * d$taxed_share, 1))))
+
+  cat("\n")
+  satir("CBAM MALIYETI",
+        sprintf("%s x %s EUR", fmt_num(d$certificates),
+                fmt_num(i$carbon_price, 2)),
+        fmt_num(d$cost_eur), "EUR")
+  if (i$fx_rate != 1) {
+    satir("", sprintf("x %s TRY/EUR", fmt_num(i$fx_rate, 2)),
+          fmt_num(d$cost_local), "TRY")
+  }
+  satir("Ton basina yuk", "", fmt_num(d$cost_per_tonne, 2), "EUR/ton")
+
+  if (!is.null(x$simulation)) {
+    s <- x$simulation
+    q <- stats::quantile(s$draws$cost_eur, c(0.05, 0.50, 0.95))
+    cat("\n"); cat(thin, "\n")
+    cat(sprintf("BELIRSIZLIK  (%s simulasyon, %g yillik ufuk)\n",
+                fmt_num(i$n_sims), i$horizon))
+    if (i$horizon == 0) {
+      cat("  Yukumluluk yili baz yil ile ayni: fiyat ve kur belirsizligi yok.\n")
+      cat("  Asagidaki aralik yalnizca tesis verimliligi sacilimindan gelir.\n")
+    } else {
+      cat("  Karbon fiyati, kur ve tesis verimliligi birlikte oynatildiginda:\n")
+    }
+    cat("\n")
+    cat(sprintf("    %%5  (iyimser)     : %15s EUR\n", fmt_num(q[1])))
+    cat(sprintf("    Medyan            : %15s EUR\n", fmt_num(q[2])))
+    cat(sprintf("    %%95 (VaR)         : %15s EUR\n", fmt_num(q[3])))
+    cat("\n")
+    cat("  Butcelenmesi gereken rakam %95 senaryosudur; medyan zamanin\n")
+    cat("  yarisinda asilir.\n")
+  }
+
+  cat("\n"); cat(line, "\n")
+  cat(sprintf("stochastic-cbam-engine | CBAM faktoru %%%s (Reg. (EU) 2023/956)\n",
+              fmt_num(100 * i$cbam_factor, 1)))
+  if (!is.null(x$simulation)) {
+    cat(sprintf("Tohum: %s | Parametreler gosterim amaclidir, dogrulayin.\n",
+                as.character(i$seed)))
+  }
+  cat(line, "\n\n")
+  invisible(x)
+}
