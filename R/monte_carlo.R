@@ -1,0 +1,146 @@
+#  Monte Carlo Motoru
+#
+#  Belirsizlik kaynaklarini tek bir simulasyon dongusunde birlestirir:
+#    - theta_f  : firma teknoloji heterojenligi (lognormal)
+#    - carbon   : EU ETS fiyati (GBM)
+#    - fx       : doviz kuru (GBM, karbon fiyati ile korele)
+#
+#  Cikti tek bir nokta tahmini degil, maruziyetin olasilik dagilimidir.
+
+#' CBAM maruziyet Monte Carlo simulasyonu
+#'
+#' @param n_sims Simulasyon sayisi.
+#' @param quantity Yillik ihracat miktari (ton).
+#' @param ei_sector Sektor ortalama emisyon yogunlugu (tCO2e / ton).
+#' @param theta_sdlog Firma teknoloji heterojenligi (log-olcekte std. sapma).
+#'   0 verilirse firma sektor ortalamasinda sabitlenir.
+#' @param theta_meanlog Teknoloji katsayisinin log-ortalamasi.
+#' @param benchmark AB ETS urun benchmark'i (tCO2e / ton).
+#' @param year Yukumluluk yili; phase-in faktorunu belirler.
+#' @param carbon_price_0 Baslangic EU ETS fiyati (EUR/tCO2e).
+#' @param fx_0 Baslangic kuru (TRY/EUR).
+#' @param carbon_paid_origin Mense ulkede odenmis karbon (tCO2e).
+#' @param seed Tekrarlanabilirlik icin rastgele sayi tohumu.
+#' @param ... \code{simulate_market()} fonksiyonuna aktarilan ek parametreler
+#'   (carbon_mu, carbon_sigma, fx_mu, fx_sigma, rho, horizon).
+#' @return \code{cbam_mc} sinifinda liste: \code{draws} (simulasyon bazinda
+#'   data.frame) ve \code{inputs} (kullanilan parametreler).
+run_cbam_mc <- function(n_sims = 10000,
+                        quantity,
+                        ei_sector,
+                        theta_sdlog = 0.25,
+                        theta_meanlog = 0,
+                        benchmark,
+                        year = 2030,
+                        carbon_price_0 = 75,
+                        fx_0 = 1,
+                        carbon_paid_origin = 0,
+                        seed = NULL,
+                        ...) {
+  if (!is.null(seed)) {
+    set.seed(seed)
+  }
+  stopifnot(n_sims > 0, quantity >= 0, ei_sector >= 0, benchmark >= 0)
+
+  # 1) Firma teknoloji heterojenligi
+  theta <- if (theta_sdlog > 0) {
+    sample_theta(n_sims, meanlog = theta_meanlog, sdlog = theta_sdlog)
+  } else {
+    rep(exp(theta_meanlog), n_sims)
+  }
+  ei_firm <- firm_emission_intensity(ei_sector, theta)
+
+  # 2) Gomulu emisyon (yasal taban, E_CBAM)
+  embedded <- embedded_emissions(quantity, ei_firm)
+
+  # 3) Piyasa belirsizligi
+  market <- simulate_market(n_sims, carbon_price_0 = carbon_price_0,
+                            fx_0 = fx_0, ...)
+
+  # 4) Yasal yukumluluk
+  factor_y <- cbam_phase_in_factor(year)
+  certs <- certificates_due(
+    embedded = embedded,
+    quantity = quantity,
+    benchmark = benchmark,
+    cbam_factor = factor_y,
+    carbon_paid_origin = carbon_paid_origin
+  )
+
+  # 5) Maliyet
+  cost <- cbam_cost(certs, market$carbon_price, market$fx_rate)
+
+  draws <- data.frame(
+    theta          = theta,
+    ei_firm        = ei_firm,
+    embedded       = embedded,
+    certificates   = certs,
+    carbon_price   = market$carbon_price,
+    fx_rate        = market$fx_rate,
+    cost_eur       = cost$cost_eur,
+    cost_local     = cost$cost_local
+  )
+
+  structure(
+    list(
+      draws = draws,
+      inputs = list(
+        n_sims = n_sims, quantity = quantity, ei_sector = ei_sector,
+        benchmark = benchmark, year = year, cbam_factor = factor_y,
+        carbon_price_0 = carbon_price_0, fx_0 = fx_0
+      )
+    ),
+    class = "cbam_mc"
+  )
+}
+
+#' Risk ozeti (%90 guven araligi)
+#'
+#' @param x \code{run_cbam_mc()} ciktisi.
+#' @param probs Raporlanacak yuzdelikler.
+#' @return Anahtar metriklerin yuzdeliklerini iceren data.frame.
+risk_summary <- function(x, probs = c(0.05, 0.25, 0.50, 0.75, 0.95)) {
+  if (!inherits(x, "cbam_mc")) {
+    stop("x, run_cbam_mc() ciktisi olmali.")
+  }
+  metrics <- c("embedded", "certificates", "cost_eur", "cost_local")
+  out <- lapply(metrics, function(m) {
+    v <- x$draws[[m]]
+    c(mean = mean(v), sd = stats::sd(v), stats::quantile(v, probs))
+  })
+  res <- as.data.frame(do.call(rbind, out))
+  rownames(res) <- metrics
+  res
+}
+
+#' Riske Maruz Deger (Value at Risk)
+#'
+#' Verilen guven duzeyinde asilmayacak maksimum maliyet.
+#'
+#' @param x \code{run_cbam_mc()} ciktisi.
+#' @param level Guven duzeyi (varsayilan 0.95).
+#' @param metric Hangi maliyet sutunu kullanilsin.
+#' @return Tek sayi: VaR degeri.
+cbam_var <- function(x, level = 0.95, metric = "cost_eur") {
+  if (!inherits(x, "cbam_mc")) {
+    stop("x, run_cbam_mc() ciktisi olmali.")
+  }
+  unname(stats::quantile(x$draws[[metric]], probs = level))
+}
+
+#' @export
+print.cbam_mc <- function(x, ...) {
+  cat("Stokastik CBAM Maruziyet Simulasyonu\n")
+  cat("------------------------------------\n")
+  cat(sprintf("Simulasyon sayisi : %s\n", fmt_num(x$inputs$n_sims)))
+  cat(sprintf("Yukumluluk yili   : %d (CBAM faktoru: %.1f%%)\n",
+              x$inputs$year, 100 * x$inputs$cbam_factor))
+  cat(sprintf("Ihracat miktari   : %s ton\n", fmt_num(x$inputs$quantity)))
+  cat("\nCBAM maliyeti (EUR):\n")
+  q <- stats::quantile(x$draws$cost_eur, c(0.05, 0.50, 0.95))
+  cat(sprintf("  %%5  alt sinir : %15s\n", fmt_num(q[1])))
+  cat(sprintf("  Medyan         : %15s\n", fmt_num(q[2])))
+  cat(sprintf("  %%95 ust sinir : %15s\n", fmt_num(q[3])))
+  cat(sprintf("  Ortalama       : %15s\n", fmt_num(mean(x$draws$cost_eur))))
+  invisible(x)
+}

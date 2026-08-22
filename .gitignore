@@ -47,3 +47,11 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+
+# Ham veri (EXIOBASE / WIOD matrisleri, firma duzeyi veri) - boyut nedeniyle
+data-raw/*
+!data-raw/.gitkeep
+
+# Simulasyon ciktilari
+output/
+*.rds
