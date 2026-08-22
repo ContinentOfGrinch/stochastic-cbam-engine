@@ -1,0 +1,35 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata from this file."
+title: "stochastic-cbam-engine: A Stochastic Framework for Carbon Border Adjustment Mechanism Exposure Analysis"
+abstract: >-
+  An open-source, dependency-free R engine that quantifies exporters' exposure to
+  the EU Carbon Border Adjustment Mechanism (CBAM) as a probability distribution
+  rather than a single point estimate. The framework couples firm-level technology
+  heterogeneity (lognormal deviation from sector-average emission intensity) with
+  correlated stochastic processes for the EU ETS carbon price and the exchange rate,
+  and reproduces the benchmark-based free-allocation deduction defined by Regulation
+  (EU) 2023/956. It separates the legally taxable emission base from the wider
+  supply-chain footprint obtained from multi-regional input-output analysis.
+  Developed with a focus on Türkiye's iron and steel sector; the modular design
+  extends to other CBAM goods. All computation runs locally: the tool fetches no
+  live data and transmits no user data.
+type: software
+authors:
+  - family-names: "İlhan"
+    given-names: "Selahattin"
+    orcid: "https://orcid.org/0009-0007-4824-752X"
+repository-code: "https://github.com/ContinentOfGrinch/stochastic-cbam-engine"
+license: AGPL-3.0-or-later
+version: 0.1.0
+date-released: "2026-08-22"
+keywords:
+  - CBAM
+  - carbon border adjustment mechanism
+  - carbon leakage
+  - emissions trading
+  - Monte Carlo simulation
+  - input-output analysis
+  - climate policy
+  - iron and steel
+  - Türkiye
+  - reproducible research
