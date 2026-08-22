@@ -55,3 +55,6 @@ data-raw/*
 # Simulasyon ciktilari
 output/
 *.rds
+
+# Gelistirme gunlugu - yayinlanmaz
+MEMORY.md
