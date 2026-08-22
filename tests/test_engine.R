@@ -213,14 +213,19 @@ expect("her urunun benchmark'i var",
        all(urunler$urun_kodu %in% benchmarks$urun_kodu))
 expect("her benchmark bir urune ait",
        all(benchmarks$urun_kodu %in% urunler$urun_kodu))
-expect("yogunluk degerleri sayisal ve pozitif",
-       all(!is.na(urunler$varsayilan_yogunluk) &
-             urunler$varsayilan_yogunluk > 0))
-expect("benchmark degerleri sayisal ve pozitif",
-       all(!is.na(benchmarks$benchmark_tco2e_ton) &
-             benchmarks$benchmark_tco2e_ton > 0))
-expect("sacilim degerleri makul araliktan",
-       all(urunler$varsayilan_sacilim >= 0 & urunler$varsayilan_sacilim < 2))
+expect("girilmis yogunluk degerleri pozitif",
+       { v <- urunler$varsayilan_yogunluk
+         all(v[!is.na(v)] > 0) })
+expect("girilmis benchmark degerleri pozitif",
+       { v <- benchmarks$benchmark_tco2e_ton
+         all(v[!is.na(v)] > 0) })
+expect("girilmis sacilim degerleri makul araliktan",
+       { v <- urunler$varsayilan_sacilim
+         all(v[!is.na(v)] >= 0 & v[!is.na(v)] < 2) })
+expect("her sektorde en az bir urun tanimli",
+       { s <- unique(urunler$sektor)
+         all(c("demir-celik", "aluminyum", "cimento", "gubre", "hidrojen")
+             %in% s) })
 expect("durum degerleri gecerli",
        all(c(urunler$durum, benchmarks$durum) %in%
              c("dogrulandi", "dogrulanmadi")))
@@ -234,12 +239,21 @@ expect("dogrulanmis benchmark satirlarinin kaynagi var",
        { d <- benchmarks[benchmarks$durum == "dogrulandi", ]
          nrow(d) == 0 || all(nzchar(trimws(d$kaynak_belge))) })
 
-expect("cbam_product tum kodlar icin calisir",
-       all(vapply(urunler$urun_kodu,
-                  function(k) {
-                    p <- cbam_product(k)
-                    is.numeric(p$benchmark) && is.numeric(p$varsayilan_yogunluk)
-                  }, logical(1))))
+expect("degeri girilmis urunler icin cbam_product calisir",
+       { hazir <- urunler$urun_kodu[!is.na(urunler$varsayilan_yogunluk)]
+         length(hazir) > 0 &&
+           all(vapply(hazir, function(k) {
+             p <- cbam_product(k)
+             is.numeric(p$benchmark) && p$benchmark > 0 &&
+               is.numeric(p$varsayilan_yogunluk)
+           }, logical(1))) })
+# Iskelet satirlar sessizce NA ile hesaba girmemeli.
+expect("degeri girilmemis urun net hata verir",
+       { bos <- urunler$urun_kodu[is.na(urunler$varsayilan_yogunluk)]
+         length(bos) == 0 ||
+           all(vapply(bos, function(k) {
+             inherits(try(cbam_product(k), silent = TRUE), "try-error")
+           }, logical(1))) })
 expect("dogrulanmamis urun uyari uretir",
        { p <- cbam_product(urunler$urun_kodu[1])
          if (p$dogrulandi) is.null(cbam_dogrulama_uyarisi(p))

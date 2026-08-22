@@ -93,6 +93,21 @@ cbam_product <- function(urun_kodu) {
   }
   b <- bm[j, ]
 
+  # Iskelet satirlar (henuz deger girilmemis urunler) sessizce NA ile
+  # hesaba girmemeli. Kullanici ya degeri girmeli ya da kendi verisini vermeli.
+  eksik <- c(
+    if (is.na(u$varsayilan_yogunluk)) "varsayilan yogunluk",
+    if (is.na(b$benchmark_tco2e_ton)) "benchmark"
+  )
+  if (length(eksik) > 0) {
+    stop(sprintf(paste0(
+      "'%s' icin %s henuz girilmemis.\n",
+      "  Bu urun referans tablosunda yer tutucu olarak duruyor; degerleri\n",
+      "  resmi belgeden girin (bkz. data-raw/mevzuat/MEVZUAT_DOGRULAMA.md)\n",
+      "  ya da --yogunluk ve --benchmark ile kendi verinizi verin."),
+      urun_kodu, paste(eksik, collapse = " ve ")))
+  }
+
   list(
     urun_kodu           = u$urun_kodu,
     urun_adi            = u$urun_adi,

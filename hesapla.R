@@ -90,17 +90,28 @@ if ("--urunler" %in% args) {
   u <- cbam_products()
   b <- cbam_benchmarks()
   cat(sprintf("\nReferans veri paketi: %s\n\n", cbam_data_version()))
-  cat(sprintf("  %-16s %-34s %9s %9s  %s\n",
+  bicim <- function(v) if (is.na(v)) "-" else sprintf("%.3f", v)
+  cat(sprintf("  %-18s %-32s %9s %9s  %s\n",
               "KOD", "URUN", "YOGUNLUK", "BENCHMARK", "DURUM"))
-  cat("  ", strrep("-", 82), "\n", sep = "")
+  cat("  ", strrep("-", 84), "\n", sep = "")
+  sektor_onceki <- ""
   for (k in seq_len(nrow(u))) {
+    if (u$sektor[k] != sektor_onceki) {
+      cat(sprintf("  [%s]\n", toupper(u$sektor[k])))
+      sektor_onceki <- u$sektor[k]
+    }
     j <- match(u$urun_kodu[k], b$urun_kodu)
-    cat(sprintf("  %-16s %-34s %9.3f %9s  %s\n",
-                u$urun_kodu[k], u$urun_adi[k], u$varsayilan_yogunluk[k],
-                if (is.na(j)) "-" else sprintf("%.3f", b$benchmark_tco2e_ton[j]),
+    cat(sprintf("  %-18s %-32s %9s %9s  %s\n",
+                u$urun_kodu[k], u$urun_adi[k],
+                bicim(u$varsayilan_yogunluk[k]),
+                if (is.na(j)) "-" else bicim(b$benchmark_tco2e_ton[j]),
                 u$durum[k]))
   }
-  cat("\n  Yogunluk degerleri sektor tahminidir; kendi tesis verinizi\n")
+  hazir <- sum(!is.na(u$varsayilan_yogunluk))
+  cat(sprintf("\n  %d urunden %d tanesinin degeri girilmis, %d tanesi iskelet.\n",
+              nrow(u), hazir, nrow(u) - hazir))
+  cat("  Iskelet urunler icin --yogunluk ve --benchmark elle verilmeli.\n")
+  cat("  Girilmis degerler sektor tahminidir; kendi tesis verinizi\n")
   cat("  --yogunluk ile verirseniz o kullanilir.\n\n")
   quit(status = 0)
 }
