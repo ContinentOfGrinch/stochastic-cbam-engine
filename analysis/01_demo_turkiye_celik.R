@@ -15,6 +15,11 @@ FX_0           <- 48     # TRY / EUR
 N_SIMS         <- 50000
 SEED           <- 2026
 
+# Baslangic fiyatlarinin gozlendigi yil. Zaman ufku her senaryoda
+# (yukumluluk yili - BASE_YEAR) olarak otomatik turetilir; 2034 senaryosu
+# sekiz yillik belirsizlikle kosar, 2026 senaryosu ufuksuz kosar.
+BASE_YEAR      <- 2026
+
 # Uretim rotasina gore parametreler.
 # Turkiye celik uretiminin yaklasik ucte ikisi elektrik ark ocagi (EAF) rotasi
 # ile yapilir; bu rota entegre (BF-BOF) rotaya gore belirgin sekilde dusuk
@@ -72,17 +77,17 @@ for (route_name in names(routes)) {
       theta_sdlog    = r$theta_sd,
       benchmark      = r$benchmark,
       year           = yr,
+      base_year      = BASE_YEAR,
       carbon_price_0 = CARBON_PRICE_0,
       fx_0           = FX_0,
       carbon_sigma   = 0.35,
       fx_sigma       = 0.18,
       rho            = 0.20,
-      horizon        = max(yr - 2025, 1),
       seed           = SEED
     )
 
-    cat(sprintf("\n--- %d (CBAM faktoru: %.1f%%) ---\n",
-                yr, 100 * sim$inputs$cbam_factor))
+    cat(sprintf("\n--- %d (CBAM faktoru: %.1f%%, ufuk: %g yil) ---\n",
+                yr, 100 * sim$inputs$cbam_factor, sim$inputs$horizon))
     cat(sprintf("  Medyan sertifika yukumlulugu : %14s tCO2e\n",
                 fmt_num(median(sim$draws$certificates))))
     cat(sprintf("  Maliyet EUR  [%%90 GA]        : %s\n",

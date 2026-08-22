@@ -55,6 +55,14 @@ expect("2034 ve sonrasi tam yukumluluk",
        cbam_phase_in_factor(2034) == 1 && cbam_phase_in_factor(2040) == 1)
 expect("faktor vektorlestirilmis",
        length(cbam_phase_in_factor(c(2026, 2030, 2034))) == 3)
+expect("vektor sonuclari tek tek cagriyla ayni",
+       all(cbam_phase_in_factor(c(2025, 2028, 2031, 2040)) ==
+             c(0, 0.100, 0.615, 1)))
+# K3: gecersiz yil sessizce NA uretiyordu; hata tum hesaba yayiliyordu.
+expect_error("tam sayi olmayan yil reddedilir", cbam_phase_in_factor(2026.5))
+expect_error("NA yil reddedilir", cbam_phase_in_factor(NA_real_))
+expect_error("metin yil reddedilir", cbam_phase_in_factor("2030"))
+expect_error("bos yil reddedilir", cbam_phase_in_factor(numeric(0)))
 
 expect("tam faktorde ucretsiz tahsisat kalmaz",
        certificates_due(1900, 1000, 1.288, 1.0) == 1900)
@@ -87,6 +95,14 @@ expect_error("gecersiz rho reddedilir",
 expect("simulate_market dogru boyutta",
        { m <- simulate_market(1000, 75, fx_0 = 40)
          nrow(m) == 1000 && all(m$carbon_price > 0) && all(m$fx_rate > 0) })
+expect("sifir ufukta belirsizlik yok",
+       { m <- simulate_market(500, 80, fx_0 = 48, horizon = 0)
+         all(abs(m$carbon_price - 80) < 1e-9) && all(abs(m$fx_rate - 48) < 1e-9) })
+expect("ufuk buyudukce dagilim genisler",
+       { set.seed(4)
+         s1 <- sd(simulate_market(50000, 80, horizon = 1)$carbon_price)
+         s8 <- sd(simulate_market(50000, 80, horizon = 8)$carbon_price)
+         s8 > s1 })
 
 cat("\n== mrio.R ==\n")
 Z <- matrix(c(20, 30, 10, 40), nrow = 2)
@@ -141,6 +157,47 @@ expect("VaR medyandan buyuk",
        cbam_var(sim, 0.95) > median(sim$draws$cost_eur))
 expect_error("risk_summary yanlis girdiyi reddeder",
              risk_summary(data.frame(a = 1)))
+
+# --- K1: horizon, yukumluluk yilindan turetilmeli --------------------------
+# Onceki davranis: year = 2034 verildiginde bile horizon = 1 kaliyordu ve
+# dokuz yillik belirsizlik tek yil gibi modellenerek risk eksik gosteriliyordu.
+expect("horizon year - base_year olarak turetilir",
+       { s <- run_cbam_mc(500, 50000, 1.9, benchmark = 1.288,
+                          year = 2034, base_year = 2026, seed = 11)
+         s$inputs$horizon == 8 })
+expect("uzak yil daha genis fiyat dagilimi uretir",
+       { near <- run_cbam_mc(20000, 50000, 1.9, benchmark = 1.288,
+                             year = 2027, base_year = 2026,
+                             carbon_price_0 = 80, seed = 11)
+         far <- run_cbam_mc(20000, 50000, 1.9, benchmark = 1.288,
+                            year = 2034, base_year = 2026,
+                            carbon_price_0 = 80, seed = 11)
+         sd(far$draws$carbon_price) > 3 * sd(near$draws$carbon_price) })
+expect("year = base_year -> ufuk sifir, fiyat sabit",
+       { s <- run_cbam_mc(500, 50000, 1.9, benchmark = 1.288,
+                          year = 2026, base_year = 2026,
+                          carbon_price_0 = 80, fx_0 = 48, seed = 3)
+         s$inputs$horizon == 0 &&
+           all(abs(s$draws$carbon_price - 80) < 1e-9) &&
+           all(abs(s$draws$fx_rate - 48) < 1e-9) })
+expect("horizon elle gecersiz kilinabilir",
+       { s <- run_cbam_mc(500, 50000, 1.9, benchmark = 1.288,
+                          year = 2034, horizon = 2, seed = 11)
+         s$inputs$horizon == 2 })
+expect_error("birden fazla yil reddedilir",
+             run_cbam_mc(100, 1000, 1.9, benchmark = 1.288, year = c(2026, 2030)))
+
+# --- K2: seed cagiranin RNG durumunu kirletmemeli --------------------------
+expect("seed global RNG durumunu kirletmez",
+       { set.seed(999)
+         before <- runif(1)
+         set.seed(999)
+         invisible(run_cbam_mc(100, 1000, 1.9, benchmark = 1.288, seed = 5))
+         identical(before, runif(1)) })
+expect("provenans alanlari inputs icinde kayitli",
+       { s <- run_cbam_mc(100, 1000, 1.9, benchmark = 1.288, seed = 5)
+         all(c("seed", "horizon", "base_year", "theta_sdlog") %in%
+               names(s$inputs)) })
 
 cat(sprintf("\n=====================================\n"))
 cat(sprintf("Toplam: %d gecti, %d kaldi\n", passed, failed))

@@ -17,12 +17,18 @@
 #' @param theta_meanlog Teknoloji katsayisinin log-ortalamasi.
 #' @param benchmark AB ETS urun benchmark'i (tCO2e / ton).
 #' @param year Yukumluluk yili; phase-in faktorunu belirler.
+#' @param base_year Baslangic fiyatlarinin (\code{carbon_price_0}, \code{fx_0})
+#'   gozlendigi yil. Zaman ufku buradan turetilir.
+#' @param horizon Zaman ufku (yil). \code{NULL} ise \code{year - base_year}
+#'   olarak hesaplanir - normalde bu birakilmalidir. Yalnizca ufku bilincli
+#'   olarak ayirmak isteyen ileri kullanim icin elle verilebilir.
 #' @param carbon_price_0 Baslangic EU ETS fiyati (EUR/tCO2e).
 #' @param fx_0 Baslangic kuru (TRY/EUR).
 #' @param carbon_paid_origin Mense ulkede odenmis karbon (tCO2e).
-#' @param seed Tekrarlanabilirlik icin rastgele sayi tohumu.
+#' @param seed Tekrarlanabilirlik icin rastgele sayi tohumu. Cagiranin RNG
+#'   durumu fonksiyon cikisinda geri yuklenir.
 #' @param ... \code{simulate_market()} fonksiyonuna aktarilan ek parametreler
-#'   (carbon_mu, carbon_sigma, fx_mu, fx_sigma, rho, horizon).
+#'   (carbon_mu, carbon_sigma, fx_mu, fx_sigma, rho).
 #' @return \code{cbam_mc} sinifinda liste: \code{draws} (simulasyon bazinda
 #'   data.frame) ve \code{inputs} (kullanilan parametreler).
 run_cbam_mc <- function(n_sims = 10000,
@@ -32,15 +38,46 @@ run_cbam_mc <- function(n_sims = 10000,
                         theta_meanlog = 0,
                         benchmark,
                         year = 2030,
+                        base_year = 2026,
+                        horizon = NULL,
                         carbon_price_0 = 75,
                         fx_0 = 1,
                         carbon_paid_origin = 0,
                         seed = NULL,
                         ...) {
+  # Tohum yalnizca bu fonksiyonun icinde etkili olmali; cagiranin oturumundaki
+  # rastgele sayi akisini kalici degistirmek sessiz bir yan etkidir.
   if (!is.null(seed)) {
+    has_old <- exists(".Random.seed", envir = globalenv(), inherits = FALSE)
+    old_seed <- if (has_old) {
+      get(".Random.seed", envir = globalenv(), inherits = FALSE)
+    } else {
+      NULL
+    }
+    on.exit({
+      if (is.null(old_seed)) {
+        if (exists(".Random.seed", envir = globalenv(), inherits = FALSE)) {
+          rm(".Random.seed", envir = globalenv())
+        }
+      } else {
+        assign(".Random.seed", old_seed, envir = globalenv())
+      }
+    }, add = TRUE)
     set.seed(seed)
   }
+
   stopifnot(n_sims > 0, quantity >= 0, ei_sector >= 0, benchmark >= 0)
+  if (length(year) != 1) {
+    stop("year tek bir yil olmali; birden fazla yil icin ayri simulasyon calistirin.")
+  }
+
+  # Zaman ufku yukumluluk yilindan turetilir. Bunu kullaniciya birakmak,
+  # 2034 senaryosunun tek yillik belirsizlikle kosulmasina ve riskin
+  # sistematik olarak eksik gosterilmesine yol aciyordu.
+  if (is.null(horizon)) {
+    horizon <- max(year - base_year, 0)
+  }
+  stopifnot(horizon >= 0)
 
   # 1) Firma teknoloji heterojenligi
   theta <- if (theta_sdlog > 0) {
@@ -55,7 +92,7 @@ run_cbam_mc <- function(n_sims = 10000,
 
   # 3) Piyasa belirsizligi
   market <- simulate_market(n_sims, carbon_price_0 = carbon_price_0,
-                            fx_0 = fx_0, ...)
+                            fx_0 = fx_0, horizon = horizon, ...)
 
   # 4) Yasal yukumluluk
   factor_y <- cbam_phase_in_factor(year)
@@ -86,8 +123,11 @@ run_cbam_mc <- function(n_sims = 10000,
       draws = draws,
       inputs = list(
         n_sims = n_sims, quantity = quantity, ei_sector = ei_sector,
-        benchmark = benchmark, year = year, cbam_factor = factor_y,
-        carbon_price_0 = carbon_price_0, fx_0 = fx_0
+        theta_sdlog = theta_sdlog, theta_meanlog = theta_meanlog,
+        benchmark = benchmark, year = year, base_year = base_year,
+        horizon = horizon, cbam_factor = factor_y,
+        carbon_price_0 = carbon_price_0, fx_0 = fx_0,
+        carbon_paid_origin = carbon_paid_origin, seed = seed
       )
     ),
     class = "cbam_mc"
@@ -135,6 +175,8 @@ print.cbam_mc <- function(x, ...) {
   cat(sprintf("Simulasyon sayisi : %s\n", fmt_num(x$inputs$n_sims)))
   cat(sprintf("Yukumluluk yili   : %d (CBAM faktoru: %.1f%%)\n",
               x$inputs$year, 100 * x$inputs$cbam_factor))
+  cat(sprintf("Zaman ufku        : %g yil (baz yil: %d)\n",
+              x$inputs$horizon, x$inputs$base_year))
   cat(sprintf("Ihracat miktari   : %s ton\n", fmt_num(x$inputs$quantity)))
   cat("\nCBAM maliyeti (EUR):\n")
   q <- stats::quantile(x$draws$cost_eur, c(0.05, 0.50, 0.95))

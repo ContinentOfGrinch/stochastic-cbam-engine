@@ -17,10 +17,11 @@
 #' @param s0 Baslangic degeri.
 #' @param mu Yillik surukleme (drift) orani.
 #' @param sigma Yillik volatilite.
-#' @param horizon Zaman ufku (yil).
+#' @param horizon Zaman ufku (yil). 0 verilirse belirsizlik yoktur ve s0
+#'   aynen dondurulur; yukumluluk yili ile baz yilin ayni oldugu durum budur.
 #' @return Uzunlugu n_sims olan, ufuk sonundaki deger vektoru.
 simulate_gbm <- function(n_sims, s0, mu, sigma, horizon = 1) {
-  stopifnot(n_sims > 0, s0 > 0, sigma >= 0, horizon > 0)
+  stopifnot(n_sims > 0, s0 > 0, sigma >= 0, horizon >= 0)
   drift <- (mu - 0.5 * sigma^2) * horizon
   shock <- sigma * sqrt(horizon) * stats::rnorm(n_sims)
   s0 * exp(drift + shock)
@@ -54,7 +55,8 @@ correlated_shocks <- function(n_sims, rho = 0) {
 #' @param fx_mu Kur yillik suruklemesi.
 #' @param fx_sigma Kur yillik volatilitesi.
 #' @param rho Karbon fiyati ile kur arasindaki korelasyon.
-#' @param horizon Zaman ufku (yil).
+#' @param horizon Zaman ufku (yil). 0 -> belirsizlik yok, baslangic degerleri
+#'   aynen dondurulur.
 #' @return \code{carbon_price} ve \code{fx_rate} sutunlarini iceren data.frame.
 simulate_market <- function(n_sims,
                             carbon_price_0,
@@ -65,6 +67,7 @@ simulate_market <- function(n_sims,
                             fx_sigma = 0.18,
                             rho = 0.20,
                             horizon = 1) {
+  stopifnot(horizon >= 0)
   z <- correlated_shocks(n_sims, rho)
 
   carbon <- carbon_price_0 * exp(

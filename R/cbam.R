@@ -9,25 +9,31 @@
 #' AB ETS ucretsiz tahsisatinin kademeli kaldirilmasini yansitir. 2026'da
 #' yukumlulugun yalnizca %2,5'i dogar, 2034'te tamami dogar.
 #'
-#' @param year Takvim yili (tam sayi).
+#' @param year Takvim yili (tam sayi). Vektor verilebilir.
 #' @return 0 ile 1 arasinda CBAM faktoru.
 cbam_phase_in_factor <- function(year) {
+  # Girdi dogrulamasi: tam sayi olmayan bir yil sessizce NA uretirse hata
+  # tum hesaba yayilir ve fark edilmez. Erken ve acik sekilde reddedilir.
+  if (!is.numeric(year) || length(year) == 0) {
+    stop("year bos olmayan sayisal bir vektor olmali.")
+  }
+  if (anyNA(year)) {
+    stop("year NA icermemeli.")
+  }
+  if (any(year != trunc(year))) {
+    stop("year tam sayi olmali (ornek: 2030).")
+  }
+
   schedule <- c(
     "2026" = 0.025, "2027" = 0.050, "2028" = 0.100,
     "2029" = 0.225, "2030" = 0.485, "2031" = 0.615,
     "2032" = 0.745, "2033" = 0.865, "2034" = 1.000
   )
-  out <- numeric(length(year))
-  for (i in seq_along(year)) {
-    y <- year[i]
-    out[i] <- if (y < 2026) {
-      0            # Gecis donemi: yalnizca raporlama, mali yukumluluk yok.
-    } else if (y >= 2034) {
-      1
-    } else {
-      unname(schedule[as.character(y)])
-    }
-  }
+
+  out <- numeric(length(year))       # year < 2026 -> 0 (yalnizca raporlama)
+  out[year >= 2034] <- 1
+  mid <- year >= 2026 & year < 2034
+  out[mid] <- unname(schedule[as.character(year[mid])])
   out
 }
 
