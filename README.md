@@ -21,7 +21,7 @@ Gereksinim: **R ≥ 4.0**. Harici paket bağımlılığı yoktur — yalnızca `
 Kendi rakamlarınızı girin, yıllık CBAM maliyetinizi hesaplayın:
 
 ```bash
-Rscript hesapla.R --rota bof --miktar 250000 --yil 2030 --kur 48
+Rscript hesapla.R --urun celik-bof --miktar 250000 --yil 2030 --kur 48
 ```
 
 ```
@@ -52,11 +52,40 @@ Kendi tesis verinizle:
 Rscript hesapla.R --miktar 120000 --yogunluk 1.72 --benchmark 1.288 \
                   --yil 2030 --karbon-fiyati 85 --kur 48
 
+Rscript hesapla.R --urunler       # tanımlı ürünler ve doğrulama durumları
 Rscript hesapla.R --yardim        # tüm seçenekler
 ```
 
-`--rota` değerleri (`eaf`, `bof`) gösterim amaçlı sektör ortalamalarıdır, resmî
-değer değildir. Gerçek analiz için kendi tesis verinizi kullanın.
+`--urun` ile referans değerler otomatik gelir; üstüne `--yogunluk` verirseniz
+kendi tesis veriniz referans değerin yerine geçer.
+
+## Kaynak Şeffaflığı
+
+Hesabın kullandığı her referans değer **kaynağını taşır** ve çıktıda gösterilir:
+
+```
+  AB ETS benchmark       :           1,484 tCO2e/ton
+                             Kaynak: CIR-BENCHMARK, Ek satır 12
+                             Geçerlilik: 2021-01-01 - 2025-12-31
+```
+
+Resmî AB belgeleri `data-raw/mevzuat/` altında **değiştirilmemiş halde**
+depoda durur; `data/` altındaki CSV tabloları bunlardan elle aktarılmıştır ve
+her satır `kaynak_belge` + `kaynak_yeri` sütunlarıyla belgeye geri bağlanır.
+
+Henüz doğrulanmamış değerler çıktıda açıkça işaretlenir:
+
+```
+!! DIKKAT: Bu hesapta DOGRULANMAMIS referans degerleri kullanildi.
+   Degerler sektor tahminidir, resmi AB degeri DEGILDIR.
+```
+
+> Referans veri paketi sürümlenir (`data/VERSION`) ve her çıktıda basılır.
+> Araç canlı veri çekmez — bu bir kısıt değil, tekrarlanabilirlik koşuludur:
+> canlı API'den beslenen bir analiz tekrarlanamaz.
+
+Belgelerin telif durumu koddan ayrıdır: kod AGPLv3, AB belgeleri Komisyon'un
+yeniden kullanım koşullarına tabidir. Ayrıntı: `data-raw/mevzuat/KAYNAKLAR.md`.
 
 ### R içinden
 
@@ -98,7 +127,7 @@ cbam_var(sim, level = 0.95)
 Test ve demo:
 
 ```bash
-Rscript tests/test_engine.R                   # 77 test
+Rscript tests/test_engine.R                   # 94 test
 Rscript analysis/01_demo_turkiye_celik.R      # EAF vs BF-BOF senaryo demosu
 ```
 
@@ -142,14 +171,22 @@ R/
   stochastic.R    GBM, korele şoklar, piyasa simülasyonu
   mrio.R          Teknik katsayılar, Leontief tersi, E_CBAM/E_MRIO kapsam farkı
   monte_carlo.R   Simülasyon motoru, risk özeti, VaR
+  reference.R     Referans veri okuyucu, kaynak izleme, doğrulama uyarısı
   calculator.R    Kullanıcı girdisi → okunabilir tek cevap (hesap makinesi)
   utils.R         Sayı/aralık formatlama
-hesapla.R         Komut satırı hesap makinesi (--yardim)
+hesapla.R         Komut satırı hesap makinesi (--yardim, --urunler)
+data/             İşlenmiş referans veri (CSV, her satır kaynağıyla)
+  urunler.csv     Ürün kataloğu, CN kodları, varsayılan yoğunluklar
+  benchmarks.csv  AB ETS ürün benchmark'ları
+  VERSION         Veri paketi sürümü
+data-raw/
+  mevzuat/        Resmî AB belgeleri — değiştirilmemiş, versiyonlanır
+  exiobase/       Büyük MRIO matrisleri (versiyonlanmaz)
+  firma/          Firma düzeyi veri (versiyonlanmaz)
 tests/
-  test_engine.R   77 test (base R, harici test paketi gerektirmez)
+  test_engine.R   94 test (base R, harici test paketi gerektirmez)
 analysis/
   01_demo_turkiye_celik.R   EAF vs BF-BOF, 2026/2030/2034 senaryoları
-data-raw/         Ham EXIOBASE/WIOD ve firma verisi (versiyonlanmaz)
 load_all.R        Bağımlılıksız modül yükleyici
 ```
 
@@ -163,6 +200,9 @@ Katmanlar ayrıdır: `R/` altındaki motor saf hesap yapar ve hiçbir yere yazma
 - [x] MRIO temel fonksiyonları (Leontief tersi, toplam yoğunluk)
 - [x] Test altyapısı ve çalıştırılabilir demo
 - [x] Hesap makinesi ve komut satırı arayüzü (`hesapla.R`)
+- [x] Referans veri katmanı, kaynak izleme ve doğrulama uyarısı
+- [ ] Resmî AB belgelerinin indirilip değerlerin doğrulanması
+- [ ] Çoklu sektör desteği (çimento, gübre, elektrik, hidrojen)
 - [ ] HTML/PDF rapor çıktısı
 - [ ] Duyarlılık ayrıştırması ve başabaş analizi
 - [ ] Dekarbonizasyon yatırım kararı modülü (kümülatif maliyet vs. NPV)

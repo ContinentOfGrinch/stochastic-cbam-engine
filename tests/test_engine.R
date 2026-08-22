@@ -199,6 +199,57 @@ expect("provenans alanlari inputs icinde kayitli",
          all(c("seed", "horizon", "base_year", "theta_sdlog") %in%
                names(s$inputs)) })
 
+cat("\n== reference.R (Katman 0 veri butunlugu) ==\n")
+urunler <- cbam_products()
+benchmarks <- cbam_benchmarks()
+
+expect("urun katalogu bos degil", nrow(urunler) > 0)
+expect("veri surumu tanimli", nchar(cbam_data_version()) > 0)
+expect("urun kodlari benzersiz",
+       !any(duplicated(urunler$urun_kodu)))
+expect("benchmark kodlari benzersiz",
+       !any(duplicated(benchmarks$urun_kodu)))
+expect("her urunun benchmark'i var",
+       all(urunler$urun_kodu %in% benchmarks$urun_kodu))
+expect("her benchmark bir urune ait",
+       all(benchmarks$urun_kodu %in% urunler$urun_kodu))
+expect("yogunluk degerleri sayisal ve pozitif",
+       all(!is.na(urunler$varsayilan_yogunluk) &
+             urunler$varsayilan_yogunluk > 0))
+expect("benchmark degerleri sayisal ve pozitif",
+       all(!is.na(benchmarks$benchmark_tco2e_ton) &
+             benchmarks$benchmark_tco2e_ton > 0))
+expect("sacilim degerleri makul araliktan",
+       all(urunler$varsayilan_sacilim >= 0 & urunler$varsayilan_sacilim < 2))
+expect("durum degerleri gecerli",
+       all(c(urunler$durum, benchmarks$durum) %in%
+             c("dogrulandi", "dogrulanmadi")))
+
+# Kritik kural: bir satir "dogrulandi" diyorsa kaynagini gostermek ZORUNDA.
+# Bu test olmadan biri kaynaksiz bir degeri resmi gibi isaretleyebilir.
+expect("dogrulanmis urun satirlarinin kaynagi var",
+       { d <- urunler[urunler$durum == "dogrulandi", ]
+         nrow(d) == 0 || all(nzchar(trimws(d$kaynak_belge))) })
+expect("dogrulanmis benchmark satirlarinin kaynagi var",
+       { d <- benchmarks[benchmarks$durum == "dogrulandi", ]
+         nrow(d) == 0 || all(nzchar(trimws(d$kaynak_belge))) })
+
+expect("cbam_product tum kodlar icin calisir",
+       all(vapply(urunler$urun_kodu,
+                  function(k) {
+                    p <- cbam_product(k)
+                    is.numeric(p$benchmark) && is.numeric(p$varsayilan_yogunluk)
+                  }, logical(1))))
+expect("dogrulanmamis urun uyari uretir",
+       { p <- cbam_product(urunler$urun_kodu[1])
+         if (p$dogrulandi) is.null(cbam_dogrulama_uyarisi(p))
+         else length(cbam_dogrulama_uyarisi(p)) > 0 })
+expect("kaynaksiz deger acikca isaretlenir",
+       cbam_kaynak_metni("", "") == "KAYNAK GIRILMEDI")
+expect("kaynak metni belge ve yeri birlestirir",
+       cbam_kaynak_metni("REG-2023-956", "Ek II") == "REG-2023-956, Ek II")
+expect_error("bilinmeyen urun kodu reddedilir", cbam_product("yok-boyle-urun"))
+
 cat("\n== calculator.R ==\n")
 est <- cbam_estimate(quantity = 1000, ei_direct = 1.9, benchmark = 1.288,
                      year = 2034, carbon_price = 80, fx_rate = 48,

@@ -1,0 +1,5 @@
+urun_kodu,benchmark_tco2e_ton,kaynak_belge,kaynak_yeri,gecerli_baslangic,gecerli_bitis,durum,not
+celik-bof,1.288,,,,,dogrulanmadi,Sicak metal benchmark'i - CIR-BENCHMARK ekinden dogrulanmali
+celik-eaf,0.215,,,,,dogrulanmadi,EAF karbon celigi benchmark'i - dogrulanmali
+alu-birincil,1.484,,,,,dogrulanmadi,Birincil aluminyum benchmark'i - dogrulanmali
+alu-ikincil,0.279,,,,,dogrulanmadi,Ikincil aluminyum benchmark'i - dogrulanmali

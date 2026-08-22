@@ -30,6 +30,9 @@
 #'   \code{year - base_year} olarak turetilir.
 #' @param n_sims Belirsizlik hesabindaki simulasyon sayisi.
 #' @param seed Tekrarlanabilirlik icin rastgele sayi tohumu.
+#' @param reference \code{cbam_product()} ciktisi ya da NULL. Verildiginde
+#'   kullanilan degerlerin kaynagi ciktida gosterilir ve dogrulanmamis veri
+#'   icin uyari basilir.
 #' @param ... \code{run_cbam_mc()} uzerinden \code{simulate_market()}'e
 #'   aktarilan ek parametreler (carbon_sigma, fx_mu, fx_sigma, rho).
 #' @return \code{cbam_estimate} sinifinda liste.
@@ -47,6 +50,7 @@ cbam_estimate <- function(quantity,
                           base_year = 2026,
                           n_sims = 50000,
                           seed = 2026,
+                          reference = NULL,
                           ...) {
   stopifnot(is.numeric(quantity), is.numeric(ei_direct), is.numeric(benchmark))
   if (length(quantity) != 1 || length(ei_direct) != 1 || length(benchmark) != 1) {
@@ -113,6 +117,7 @@ cbam_estimate <- function(quantity,
         de_minimis      = exempt
       ),
       simulation = sim,
+      reference = reference,
       inputs = list(
         quantity = quantity, ei_direct = ei_direct, ei_indirect = ei_indirect,
         include_indirect = include_indirect, ei_total = ei_total,
@@ -134,20 +139,43 @@ print.cbam_estimate <- function(x, ...) {
   line <- strrep("=", 68)
   thin <- strrep("-", 68)
 
+  r <- x$reference
+
   cat("\n"); cat(line, "\n")
   cat("  CBAM MALIYET HESABI\n")
-  cat(line, "\n\n")
+  if (!is.null(r)) {
+    cat(sprintf("  %s\n", r$urun_adi))
+  }
+  cat(line, "\n")
+
+  # Dogrulanmamis referans degerleri, resmi deger sanilmadan once soylenmeli.
+  uyari <- if (!is.null(r)) cbam_dogrulama_uyarisi(r) else NULL
+  if (!is.null(uyari)) {
+    cat("\n")
+    for (u in uyari) cat(u, "\n", sep = "")
+  }
+  cat("\n")
 
   cat("GIRDILER\n")
   cat(sprintf("  Ihracat miktari        : %15s ton/yil\n", fmt_num(i$quantity)))
   cat(sprintf("  Emisyon yogunlugu      : %15s tCO2e/ton  (dogrudan)\n",
               fmt_num(i$ei_direct, 3)))
+  if (!is.null(r)) {
+    cat(sprintf("  %sKaynak: %s\n", strrep(" ", 27), r$yogunluk_kaynak))
+  }
   if (i$include_indirect) {
     cat(sprintf("  + dolayli (elektrik)   : %15s tCO2e/ton\n",
                 fmt_num(i$ei_indirect, 3)))
   }
   cat(sprintf("  AB ETS benchmark       : %15s tCO2e/ton\n",
               fmt_num(i$benchmark, 3)))
+  if (!is.null(r)) {
+    cat(sprintf("  %sKaynak: %s\n", strrep(" ", 27), r$benchmark_kaynak))
+    if (nzchar(r$benchmark_gecerlilik)) {
+      cat(sprintf("  %sGecerlilik: %s\n", strrep(" ", 27),
+                  r$benchmark_gecerlilik))
+    }
+  }
   cat(sprintf("  Yukumluluk yili        : %15d\n", i$year))
   cat(sprintf("  Karbon fiyati          : %15s EUR/tCO2e\n",
               fmt_num(i$carbon_price, 2)))
@@ -227,6 +255,10 @@ print.cbam_estimate <- function(x, ...) {
   cat("\n"); cat(line, "\n")
   cat(sprintf("stochastic-cbam-engine | CBAM faktoru %%%s (Reg. (EU) 2023/956)\n",
               fmt_num(100 * i$cbam_factor, 1)))
+  if (!is.null(r)) {
+    cat(sprintf("Referans veri paketi: %s%s\n", r$veri_surumu,
+                if (isTRUE(r$dogrulandi)) "" else "  [DOGRULANMAMIS]"))
+  }
   if (!is.null(x$simulation)) {
     cat(sprintf("Tohum: %s | Parametreler gosterim amaclidir, dogrulayin.\n",
                 as.character(i$seed)))

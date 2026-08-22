@@ -14,23 +14,8 @@
 
 suppressWarnings(suppressMessages(source("load_all.R")))
 
-# --- Onceden tanimli uretim rotalari ----------------------------------------
-# DIKKAT: Bu degerler gosterim amacli sektor ortalamalaridir, resmi deger
-# degildir. Kendi tesis verinizi --yogunluk ve --benchmark ile verin.
-ROTALAR <- list(
-  eaf = list(
-    ad        = "Elektrik Ark Ocagi (EAF)",
-    yogunluk  = 0.25,
-    benchmark = 0.215,
-    sacilim   = 0.30
-  ),
-  bof = list(
-    ad        = "Entegre Tesis (BF-BOF)",
-    yogunluk  = 1.95,
-    benchmark = 1.288,
-    sacilim   = 0.20
-  )
-)
+# Urun tanimlari data/urunler.csv ve data/benchmarks.csv icinden gelir;
+# bu dosyada gomulu deger yoktur. Kaynak belgeler data-raw/mevzuat/ altinda.
 
 yardim <- function() {
   cat("
@@ -46,9 +31,13 @@ ZORUNLU
   --miktar <ton>          AB'ye yillik ihracat miktari
 
   ve asagidakilerden biri:
-  --rota <eaf|bof>        Hazir uretim rotasi (yogunluk + benchmark otomatik)
+  --urun <kod>            Referans tablosundan urun (yogunluk + benchmark
+                          otomatik gelir). Kodlar icin: --urunler
   --yogunluk <tCO2e/ton>  Kendi dogrudan emisyon yogunlugunuz
   --benchmark <tCO2e/ton>   ile birlikte AB ETS urun benchmark'i
+
+  --urun verip ustune --yogunluk yazarsaniz, kendi degeriniz referans
+  degerin yerine gecer. Tesis verisi her zaman sektor ortalamasini yener.
 
 ISTEGE BAGLI
   --yil <yil>             Yukumluluk yili           (varsayilan: 2026)
@@ -62,23 +51,28 @@ ISTEGE BAGLI
   --simulasyon <n>        Simulasyon sayisi         (varsayilan: 50000)
   --tohum <n>             Rastgele sayi tohumu      (varsayilan: 2026)
   --kesin                 Belirsizlik hesaplamadan yalniz deterministik sonuc
+  --urunler               Referans tablosundaki urunleri listele
   --yardim                Bu metni goster
 
 ORNEKLER
-  # Entegre tesis, 250 bin ton, 2030 yili
-  Rscript hesapla.R --rota bof --miktar 250000 --yil 2030 --kur 48
+  # Entegre celik tesisi, 250 bin ton, 2030 yili
+  Rscript hesapla.R --urun celik-bof --miktar 250000 --yil 2030 --kur 48
+
+  # Birincil aluminyum
+  Rscript hesapla.R --urun alu-birincil --miktar 15000 --yil 2030 --kur 48
 
   # Kendi tesis verinizle
   Rscript hesapla.R --miktar 120000 --yogunluk 1.72 --benchmark 1.288 \\
                     --yil 2030 --karbon-fiyati 85 --kur 48
 
   # Turkiye'de karbon odemesi yapilmis ise
-  Rscript hesapla.R --rota bof --miktar 250000 --yil 2030 \\
+  Rscript hesapla.R --urun celik-bof --miktar 250000 --yil 2030 \\
                     --mensede-odenen 40000
 
 NOT
-  Hazir rota degerleri sektor ortalamasidir, resmi deger degildir.
-  Gercek analiz icin kendi tesis verinizi kullanin.
+  Referans degerlerin her biri kaynagini tasir ve ciktida gosterilir.
+  Kaynak belgeler data-raw/mevzuat/ altindadir.
+  Henuz dogrulanmamis degerler ciktida acikca isaretlenir.
   Cikan sayilar yatirim veya beyan karari icin tek basina yeterli degildir.
 
 ")
@@ -89,6 +83,25 @@ args <- commandArgs(trailingOnly = TRUE)
 
 if (length(args) == 0 || "--yardim" %in% args || "--help" %in% args) {
   yardim()
+  quit(status = 0)
+}
+
+if ("--urunler" %in% args) {
+  u <- cbam_products()
+  b <- cbam_benchmarks()
+  cat(sprintf("\nReferans veri paketi: %s\n\n", cbam_data_version()))
+  cat(sprintf("  %-16s %-34s %9s %9s  %s\n",
+              "KOD", "URUN", "YOGUNLUK", "BENCHMARK", "DURUM"))
+  cat("  ", strrep("-", 82), "\n", sep = "")
+  for (k in seq_len(nrow(u))) {
+    j <- match(u$urun_kodu[k], b$urun_kodu)
+    cat(sprintf("  %-16s %-34s %9.3f %9s  %s\n",
+                u$urun_kodu[k], u$urun_adi[k], u$varsayilan_yogunluk[k],
+                if (is.na(j)) "-" else sprintf("%.3f", b$benchmark_tco2e_ton[j]),
+                u$durum[k]))
+  }
+  cat("\n  Yogunluk degerleri sektor tahminidir; kendi tesis verinizi\n")
+  cat("  --yogunluk ile verirseniz o kullanilir.\n\n")
   quit(status = 0)
 }
 
@@ -136,25 +149,27 @@ if (is.null(miktar)) {
 yogunluk  <- sayi("yogunluk")
 benchmark <- sayi("benchmark")
 sacilim   <- sayi("sacilim")
-rota_ad   <- NULL
+referans  <- NULL
 
-if (!is.null(opt[["rota"]])) {
-  r <- tolower(opt[["rota"]])
-  if (is.null(ROTALAR[[r]])) {
-    cat(sprintf("HATA: bilinmeyen rota '%s'. Secenekler: %s\n",
-                opt[["rota"]], paste(names(ROTALAR), collapse = ", ")))
-    quit(status = 1)
-  }
-  rota      <- ROTALAR[[r]]
-  rota_ad   <- rota$ad
-  if (is.null(yogunluk))  yogunluk  <- rota$yogunluk
-  if (is.null(benchmark)) benchmark <- rota$benchmark
-  if (is.null(sacilim))   sacilim   <- rota$sacilim
+if (!is.null(opt[["urun"]])) {
+  referans <- tryCatch(
+    cbam_product(tolower(trimws(opt[["urun"]]))),
+    error = function(e) {
+      cat(sprintf("HATA: %s\n", conditionMessage(e)))
+      cat("      --urunler ile mevcut kodlari listeleyin.\n")
+      quit(status = 1)
+    }
+  )
+  # Kullanicinin verdigi deger her zaman referans degerin onune gecer:
+  # tesis verisi sektor ortalamasindan iyidir.
+  if (is.null(yogunluk))  yogunluk  <- referans$varsayilan_yogunluk
+  if (is.null(benchmark)) benchmark <- referans$benchmark
+  if (is.null(sacilim))   sacilim   <- referans$varsayilan_sacilim
 }
 
 if (is.null(yogunluk) || is.null(benchmark)) {
-  cat("HATA: --rota verin ya da --yogunluk ile --benchmark degerlerini birlikte girin.\n")
-  cat("      --yardim ile ornekleri gorun.\n")
+  cat("HATA: --urun verin ya da --yogunluk ile --benchmark degerlerini\n")
+  cat("      birlikte girin. --urunler ile mevcut kodlari gorebilirsiniz.\n")
   quit(status = 1)
 }
 if (is.null(sacilim)) sacilim <- 0.20
@@ -177,7 +192,8 @@ sonuc <- tryCatch(
     theta_sdlog        = sacilim,
     base_year          = sayi("baz-yil", 2026),
     n_sims             = sayi("simulasyon", 50000),
-    seed               = sayi("tohum", 2026)
+    seed               = sayi("tohum", 2026),
+    reference          = referans
   ),
   error = function(e) {
     cat(sprintf("HATA: %s\n", conditionMessage(e)))
@@ -186,7 +202,4 @@ sonuc <- tryCatch(
   }
 )
 
-if (!is.null(rota_ad)) {
-  cat(sprintf("\nRota: %s  (hazir degerler - resmi deger degildir)\n", rota_ad))
-}
 print(sonuc)

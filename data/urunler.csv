@@ -1,0 +1,5 @@
+urun_kodu,urun_adi,sektor,cn_kodlari,dolayli_kapsamda,varsayilan_yogunluk,varsayilan_sacilim,kaynak_belge,kaynak_yeri,durum,not
+celik-bof,Entegre tesis (BF-BOF),demir-celik,,hayir,1.950,0.20,,,dogrulanmadi,Sektor ortalamasi tahmini - resmi deger degil
+celik-eaf,Elektrik ark ocagi (EAF),demir-celik,,hayir,0.250,0.30,,,dogrulanmadi,Sektor ortalamasi tahmini - resmi deger degil
+alu-birincil,Birincil aluminyum (elektroliz),aluminyum,,hayir,1.700,0.15,,,dogrulanmadi,Dolayli kapsam Ek II'den DOGRULANMALI - 136 vs 608 EUR/ton farki
+alu-ikincil,Ikincil aluminyum (hurda/remelt),aluminyum,,hayir,0.350,0.25,,,dogrulanmadi,Dolayli kapsam Ek II'den DOGRULANMALI

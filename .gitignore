@@ -48,9 +48,13 @@ po/*~
 # RStudio Connect folder
 rsconnect/
 
-# Ham veri (EXIOBASE / WIOD matrisleri, firma duzeyi veri) - boyut nedeniyle
-data-raw/*
-!data-raw/.gitkeep
+# Ham veri politikasi:
+#   data-raw/mevzuat/  -> resmi AB belgeleri, KASITLI OLARAK versiyonlanir.
+#                         Kullanici kaynagi dogrudan gorebilsin diye depoda durur.
+#   asagidakiler       -> boyut ve gizlilik nedeniyle versiyonlanmaz
+data-raw/exiobase/
+data-raw/wiod/
+data-raw/firma/
 
 # Simulasyon ciktilari
 output/
