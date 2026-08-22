@@ -40,7 +40,7 @@ cbam_var(sim, level = 0.95)
 Komut satırından:
 
 ```bash
-Rscript tests/test_engine.R                   # 43 test
+Rscript tests/test_engine.R                   # 57 test
 Rscript analysis/01_demo_turkiye_celik.R      # EAF vs BF-BOF senaryo demosu
 ```
 
@@ -86,7 +86,7 @@ R/
   monte_carlo.R   Simülasyon motoru, risk özeti, VaR
   utils.R         Sayı/aralık formatlama
 tests/
-  test_engine.R   43 test (base R, harici test paketi gerektirmez)
+  test_engine.R   57 test (base R, harici test paketi gerektirmez)
 analysis/
   01_demo_turkiye_celik.R   EAF vs BF-BOF, 2026/2030/2034 senaryoları
 data-raw/         Ham EXIOBASE/WIOD ve firma verisi (versiyonlanmaz)
