@@ -1,0 +1,62 @@
+stochastic-cbam-engine
+======================
+
+Türk ihracatçılar için açık kaynaklı CBAM maliyet hesaplayıcısı.
+
+Copyright (C) 2026 Selahattin İlhan <selahattinilkhan@gmail.com>
+ORCID: 0009-0007-4824-752X
+https://github.com/ContinentOfGrinch/stochastic-cbam-engine
+
+Lisans: GNU Affero General Public License, sürüm 3 veya sonrası
+        (SPDX: AGPL-3.0-or-later). Tam metin: LICENSE
+
+Ek şart: LICENSE-ADDITIONAL-TERMS.md — yazar atıflarının korunması
+         AGPL v3 Bölüm 7(b) uyarınca zorunludur.
+
+
+ATIF / ATTRIBUTION
+------------------
+
+Bu yazılımı akademik çalışmada kullanırsanız lütfen CITATION.cff
+dosyasındaki künyeyi kullanarak atıf verin.
+
+If you use this software in academic work, please cite it using the
+metadata in CITATION.cff.
+
+
+ÜÇÜNCÜ TARAF BİLEŞENLER / THIRD-PARTY COMPONENTS
+------------------------------------------------
+
+Yoktur. Bu yazılım yalnızca R'ın `base` ve `stats` paketlerini kullanır;
+harici bir kütüphane içermez veya dağıtmaz.
+
+None. This software uses only R's `base` and `stats` packages. It bundles
+and distributes no third-party libraries.
+
+
+VERİ / DATA
+-----------
+
+`data/` altındaki işlenmiş referans tabloları bu projeye aittir ve kodla
+aynı lisansa tabidir.
+
+`data-raw/mevzuat/` altındaki resmî Avrupa Birliği belgeleri bu projeye ait
+DEĞİLDİR. Bunlar Avrupa Komisyonu'nun belge yeniden kullanım koşullarına
+tabidir ve değiştirilmeden, kaynak belirtilerek yer almaktadır. Ayrıntı için
+data-raw/mevzuat/KAYNAKLAR.md dosyasına bakın.
+
+The official European Union documents under `data-raw/mevzuat/` are NOT
+covered by this project's licence. They are reproduced unmodified under the
+European Commission's document reuse terms, with the source acknowledged.
+
+
+GARANTİ REDDİ / DISCLAIMER
+--------------------------
+
+Bu yazılım HİÇBİR GARANTİ VERİLMEKSİZİN dağıtılmaktadır. Ürettiği sayılar
+beyan, yatırım veya fiyatlama kararı için tek başına yeterli değildir.
+Çelişki halinde resmî mevzuat metni geçerlidir.
+
+This software is distributed WITHOUT ANY WARRANTY. Its output is not
+sufficient on its own for a declaration, investment, or pricing decision.
+In case of conflict, the official legal text prevails.

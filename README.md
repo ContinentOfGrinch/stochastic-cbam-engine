@@ -212,6 +212,11 @@ data-raw/
   firma/          Firma düzeyi veri (versiyonlanmaz)
 tests/
   test_engine.R   109 test (base R, harici test paketi gerektirmez)
+LICENSE                        AGPL-3.0 tam metni
+LICENSE-ADDITIONAL-TERMS.md    Atıf ek şartı (AGPL §7(b)) + marka notu
+NOTICE                         Telif, atıf ve veri kaynağı bildirimleri
+CONTRIBUTING.md                Katkı rehberi + DCO
+CITATION.cff                   Akademik atıf künyesi
 analysis/
   01_demo_turkiye_celik.R   EAF vs BF-BOF, 2026/2030/2034 senaryoları
 load_all.R        Bağımlılıksız modül yükleyici
@@ -248,9 +253,31 @@ Katmanlar ayrıdır: `R/` altındaki motor saf hesap yapar ve hiçbir yere yazma
 - [ ] Duyarlılık analizi (Sobol indeksleri)
 - [ ] Görselleştirme katmanı ve raporlama şablonu
 
-## Lisanslama ve Fikri Mülkiyet
+## Lisans ve Katkı
 
-Bu altyapı **AGPLv3 (GNU Affero General Public License v3.0)** ile lisanslanmıştır. Akademik araştırmalarda serbestçe kullanılabilir ve atıf yapılarak geliştirilebilir. Ticari kullanım ve kapalı sistem entegrasyonları için "Çifte Lisanslama" (Dual Licensing) modeli uygulanmaktadır.
+**AGPL-3.0-or-later** ([`LICENSE`](LICENSE)) + atıf ek şartı
+([`LICENSE-ADDITIONAL-TERMS.md`](LICENSE-ADDITIONAL-TERMS.md)).
+
+Copyright © 2026 Selahattin İlhan · ORCID
+[0009-0007-4824-752X](https://orcid.org/0009-0007-4824-752X)
+
+| | |
+|---|---|
+| Yerel kullanım (kendi bilgisayarında) | Serbest, hiçbir yükümlülük yok |
+| Akademik araştırma | Serbest — [`CITATION.cff`](CITATION.cff) ile atıf verin |
+| Değiştirip dağıtma | Değişiklikleriniz de AGPL ile açık olmalı |
+| Web sitesinde/serviste sunma | Kullanıcılarınıza kaynak kodu sunmalısınız (AGPL §13) |
+
+**Atıf ek şartı (AGPL §7(b)):** Yeniden dağıtırsanız kaynak dosyalardaki telif
+başlıklarını, [`NOTICE`](NOTICE) dosyasını ve **araç çıktısındaki künyeyi**
+korumak zorundasınız. Kendi adınızı ekleyebilirsiniz; mevcut olanı
+kaldıramazsınız. Lisans projenin **adını** kullanma hakkı vermez.
+
+**Katkı:** [`CONTRIBUTING.md`](CONTRIBUTING.md). CLA yok — sadece
+`git commit -s` ile DCO imzası. Telif hakkınız sizde kalır.
+
+**Ticari lisans:** AGPL koşulları senaryonuza uymuyorsa farklı koşullarla
+lisanslama için iletişime geçebilirsiniz.
 
 ## Uyarı
 

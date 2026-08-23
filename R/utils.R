@@ -1,3 +1,11 @@
+#  stochastic-cbam-engine — Copyright (C) 2026 Selahattin İlhan
+#  SPDX-License-Identifier: AGPL-3.0-or-later
+#
+#  Bu dosya GNU Affero General Public License v3 (ya da sonraki bir surum)
+#  kosullariyla dagitilir; HICBIR GARANTI VERILMEZ. Ayrintilar: LICENSE
+#  EK SART (AGPL 7(b)): yazar atiflari ve telif bildirimleri korunmalidir.
+#  Bkz. NOTICE ve LICENSE-ADDITIONAL-TERMS.md
+
 #  Yardimci Fonksiyonlar
 
 #' Turkce bicimde sayi formatlama
