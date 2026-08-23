@@ -123,23 +123,18 @@ cat(sprintf("  EAF avantaji          : %15s EUR/yil\n",
             fmt_num(bof_2034 - eaf_2034)))
 
 # ---------------------------------------------------------------------------
-# E_CBAM ile E_MRIO kapsam farki
+# Yasal taban (E_CBAM)
 # ---------------------------------------------------------------------------
 cat("\n============================================================\n")
-cat("KAPSAM FARKI: E_CBAM vs E_MRIO\n")
+cat("YASAL EMISYON TABANI\n")
 cat("============================================================\n")
-cat("Yasal taban yalnizca tesis ici emisyonlari kapsar. Tedarik zincirinin\n")
-cat("tamami dikkate alindiginda gercek ayak izi belirgin sekilde buyuktur;\n")
-cat("aradaki fark, kapsam genislemelerine karsi gizli maruziyettir.\n\n")
 
 e_cbam_bof <- QUANTITY * routes$BF_BOF$ei_sector
-e_mrio_bof <- e_cbam_bof * 1.35   # Ornek: MRIO tabani %35 daha genis
-gap <- scope_gap(e_cbam_bof, e_mrio_bof)
+cat(sprintf("  E_CBAM (BF-BOF)       : %12s tCO2e\n", fmt_num(e_cbam_bof)))
 
-cat(sprintf("  E_CBAM (yasal)        : %12s tCO2e\n", fmt_num(e_cbam_bof)))
-cat(sprintf("  E_MRIO (tedarik zin.) : %12s tCO2e\n", fmt_num(e_mrio_bof)))
-cat(sprintf("  Kapsam farki          : %12s tCO2e\n", fmt_num(gap$gap)))
-cat(sprintf("  Kapsama orani         : %11.1f%%\n", 100 * gap$coverage_ratio))
-
-cat("\nNot: E_MRIO carpani burada gosterim amacli sabittir. Gercek deger\n")
-cat("EXIOBASE/WIOD matrislerinden total_emission_intensity() ile uretilmelidir.\n\n")
+cat("\nBu, mevzuatin vergilendirdigi tabandir: tesis ici dogrudan emisyonlar.\n")
+cat("Tedarik zincirinin tamamina yayilan gercek ayak izi (E_MRIO) bundan\n")
+cat("buyuktur ve aradaki fark, kapsam genislemelerine karsi gizli maruziyeti\n")
+cat("olcer. Bu hesap research/mrio.R altindaki arastirma ekinde yapilir ve\n")
+cat("gercek EXIOBASE/WIOD matrisi gerektirir; uydurma bir carpanla tahmin\n")
+cat("edilmesi yaniltici olurdu.\n\n")

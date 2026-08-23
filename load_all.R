@@ -11,5 +11,16 @@ local({
     stop("R/ dizininde kaynak dosya bulunamadi. Proje kokunde misiniz?")
   }
   invisible(lapply(files, source, encoding = "UTF-8"))
-  message(sprintf("stochastic-cbam-engine yuklendi (%d modul).", length(files)))
+
+  # Arastirma eklentileri motorun parcasi degildir; yoksa da hesap makinesi
+  # calisir. Bu yuzden ayri yuklenir ve ayri raporlanir.
+  ek <- list.files("research", pattern = "\\.R$", full.names = TRUE)
+  if (length(ek) > 0) {
+    invisible(lapply(ek, source, encoding = "UTF-8"))
+  }
+
+  message(sprintf("stochastic-cbam-engine yuklendi (%d modul%s).",
+                  length(files),
+                  if (length(ek) > 0) sprintf(" + %d arastirma eki", length(ek))
+                  else ""))
 })

@@ -1,10 +1,32 @@
-#  Cok Bolgeli Girdi-Cikti (MRIO) Modulu
+#  ARASTIRMA EKI - Cok Bolgeli Girdi-Cikti (MRIO) Modulu
 #
-#  E_CBAM ile E_MRIO ayrimi bu projenin metodolojik omurgasidir:
-#    E_CBAM : yalnizca tesis duzeyinde dogrudan + elektrik emisyonlari (yasal taban)
-#    E_MRIO : tedarik zincirinin tamamina yayilan ayak izi (ekonomik gercek taban)
+#  ---------------------------------------------------------------------------
+#  BU MODUL HESAP MAKINESININ PARCASI DEGILDIR.
 #
-#  EXIOBASE / WIOD matrisleri bu moduldeki fonksiyonlara beslenir.
+#  CBAM faturasi hesabi (hesapla.R -> R/calculator.R -> R/cbam.R) bu dosyadaki
+#  hicbir fonksiyonu cagirmaz. Buradaki fonksiyonlar isteğe bagli bir arastirma
+#  eklentisidir; silinse hesap makinesi aynen calismaya devam eder.
+#
+#  Neden ayri bir klasorde: bu modulu anlamak icin girdi-cikti iktisadi bilmek
+#  gerekir (teknik katsayi matrisi, Leontief tersi). Hesap makinesini anlamak
+#  icinse carpma ve cikarma yeterlidir. Ikisini ayni rafta tutmak, araci
+#  gereginden karmasik gosteriyordu.
+#  ---------------------------------------------------------------------------
+#
+#  NE ISE YARAR
+#
+#  CBAM'in yasal tabani ile urunun gercek karbon ayak izi ayni sey degildir:
+#    E_CBAM : yalnizca tesis duzeyinde dogrudan + elektrik emisyonlari
+#             (mevzuatin vergilendirdigi taban)
+#    E_MRIO : tedarik zincirinin tamamina yayilan ayak izi
+#             (ekonomik olarak gercek taban)
+#
+#  Aradaki fark, kapsam genislemelerine karsi "gizli maruziyeti" olcer.
+#  Bugun vergilendirilmeyen ama yarin vergilendirilebilecek emisyon budur.
+#
+#  DURUM: Fonksiyonlar yazildi ve test edildi, ancak gercek EXIOBASE/WIOD
+#  matrisleri henuz baglanmadi. Kapsam farkini uretmek icin data-raw/exiobase/
+#  altina matris yerlestirilmesi gerekir.
 
 #' Teknik katsayi matrisi (A)
 #'

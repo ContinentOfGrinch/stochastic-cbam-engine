@@ -1,6 +1,17 @@
 # Stochastic CBAM Engine
 
-> Open-source stochastic MRIO framework for Carbon Border Adjustment Mechanism (CBAM) exposure analysis.
+> Türk ihracatçılar için açık kaynaklı CBAM maliyet hesaplayıcısı.
+> Her sayı kaynağını gösterir; tek tahmin yerine olasılık dağılımı verir.
+
+**Proje iki parçadan oluşur:**
+
+| Parça | Kimin için | Ne gerektirir |
+|---|---|---|
+| **Hesap makinesi** (`hesapla.R`, `R/`) | İhracatçı, üretici | Çarpma ve çıkarma |
+| **Araştırma eki** (`research/`) | Akademisyen | Girdi-çıktı iktisadı |
+
+Araştırma eki **isteğe bağlıdır** — hesap makinesi ona hiç dokunmaz, silinse
+aynen çalışır. Çoğu kullanıcının ihtiyacı yalnızca ilk satırdır.
 
 Bu proje, AB Sınırda Karbon Düzenleme Mekanizması'nın (SKDM) ihracatçılar üzerindeki etkisini sektörel ortalamalara sıkışmadan, stokastik belirsizlikler ve mikro düzey firma verileriyle hesaplayan açık kaynaklı bir ekonometrik laboratuvardır.
 
@@ -55,6 +66,20 @@ Rscript hesapla.R --miktar 120000 --yogunluk 1.72 --benchmark 1.288 \
 Rscript hesapla.R --urunler       # tanımlı ürünler ve doğrulama durumları
 Rscript hesapla.R --yardim        # tüm seçenekler
 ```
+
+### Paylaşılabilir rapor
+
+```bash
+Rscript hesapla.R --urun celik-bof --miktar 250000 --yil 2030 --kur 48 \
+                  --firma "Örnek Çelik A.Ş." --rapor cikti/rapor.html
+```
+
+Tek bir HTML dosyası üretir (~10 KB): yönetici özeti, şeffaf hesap tablosu,
+dağılım grafiği, yüzdelikler ve tam provenans bloğu. Tarayıcıda açılır,
+PDF olarak yazdırılır, e-postayla gönderilir.
+
+**Dışarıdan hiçbir şey yüklemez** — internet olmadan açılır, hiçbir sunucuya
+istek gitmez. Bu test altındadır: alıcının verisi hiçbir yere ulaşmaz.
 
 `--urun` ile referans değerler otomatik gelir; üstüne `--yogunluk` verirseniz
 kendi tesis veriniz referans değerin yerine geçer.
@@ -127,7 +152,7 @@ cbam_var(sim, level = 0.95)
 Test ve demo:
 
 ```bash
-Rscript tests/test_engine.R                   # 94 test
+Rscript tests/test_engine.R                   # 109 test
 Rscript analysis/01_demo_turkiye_celik.R      # EAF vs BF-BOF senaryo demosu
 ```
 
@@ -169,12 +194,14 @@ R/
   emissions.R     EI_f = EI_s × theta_f, gömülü emisyon, theta örnekleme
   cbam.R          Phase-in takvimi, sertifika yükümlülüğü, maliyet, de minimis
   stochastic.R    GBM, korele şoklar, piyasa simülasyonu
-  mrio.R          Teknik katsayılar, Leontief tersi, E_CBAM/E_MRIO kapsam farkı
   monte_carlo.R   Simülasyon motoru, risk özeti, VaR
   reference.R     Referans veri okuyucu, kaynak izleme, doğrulama uyarısı
   calculator.R    Kullanıcı girdisi → okunabilir tek cevap (hesap makinesi)
+  report.R        Paylaşılabilir HTML rapor (bağımlılıksız, tek dosya)
   utils.R         Sayı/aralık formatlama
-hesapla.R         Komut satırı hesap makinesi (--yardim, --urunler)
+hesapla.R         Komut satırı hesap makinesi (--yardim, --urunler, --rapor)
+research/         ARAŞTIRMA EKİ — hesap makinesi buraya hiç dokunmaz
+  mrio.R          Leontief tersi, E_CBAM/E_MRIO kapsam farkı
 data/             İşlenmiş referans veri (CSV, her satır kaynağıyla)
   urunler.csv     Ürün kataloğu, CN kodları, varsayılan yoğunluklar
   benchmarks.csv  AB ETS ürün benchmark'ları
@@ -184,7 +211,7 @@ data-raw/
   exiobase/       Büyük MRIO matrisleri (versiyonlanmaz)
   firma/          Firma düzeyi veri (versiyonlanmaz)
 tests/
-  test_engine.R   94 test (base R, harici test paketi gerektirmez)
+  test_engine.R   109 test (base R, harici test paketi gerektirmez)
 analysis/
   01_demo_turkiye_celik.R   EAF vs BF-BOF, 2026/2030/2034 senaryoları
 load_all.R        Bağımlılıksız modül yükleyici
@@ -201,12 +228,21 @@ Katmanlar ayrıdır: `R/` altındaki motor saf hesap yapar ve hiçbir yere yazma
 - [x] Test altyapısı ve çalıştırılabilir demo
 - [x] Hesap makinesi ve komut satırı arayüzü (`hesapla.R`)
 - [x] Referans veri katmanı, kaynak izleme ve doğrulama uyarısı
-- [ ] Resmî AB belgelerinin indirilip değerlerin doğrulanması
-- [ ] Çoklu sektör desteği (çimento, gübre, elektrik, hidrojen)
-- [ ] HTML/PDF rapor çıktısı
+- [x] Paylaşılabilir HTML rapor (`--rapor`)
+
+**v1.0 için kalan:**
+
+- [ ] Resmî AB belgelerinden değerlerin doğrulanması (`data-raw/mevzuat/`)
+- [ ] Sürekli entegrasyon (GitHub Actions)
+- [ ] Reel/nominal ayrımı — TRY rakamları nominal kur sürüklemesinin etkisinde
+
+**v1.0 sonrası:**
+
 - [ ] Duyarlılık ayrıştırması ve başabaş analizi
 - [ ] Dekarbonizasyon yatırım kararı modülü (kümülatif maliyet vs. NPV)
-- [ ] EXIOBASE/WIOD veri alım katmanı (`data-raw/`)
+- [ ] Çimento, gübre, hidrojen için doğrulanmış değerler
+- [ ] Elektrik modülü (ayrı hesap yolu gerektiriyor)
+- [ ] MRIO entegrasyonu ve EXIOBASE veri alım katmanı
 - [ ] Gerçek AB ETS benchmark tablosunun paketlenmesi
 - [ ] Çoklu sektör desteği (çimento, alüminyum, gübre, elektrik, hidrojen)
 - [ ] Duyarlılık analizi (Sobol indeksleri)

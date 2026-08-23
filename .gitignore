@@ -56,8 +56,9 @@ data-raw/exiobase/
 data-raw/wiod/
 data-raw/firma/
 
-# Simulasyon ciktilari
+# Simulasyon ve rapor ciktilari
 output/
+cikti/
 *.rds
 
 # Gelistirme gunlugu - yayinlanmaz

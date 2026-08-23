@@ -51,6 +51,8 @@ ISTEGE BAGLI
   --simulasyon <n>        Simulasyon sayisi         (varsayilan: 50000)
   --tohum <n>             Rastgele sayi tohumu      (varsayilan: 2026)
   --kesin                 Belirsizlik hesaplamadan yalniz deterministik sonuc
+  --rapor <dosya.html>    Paylasilabilir HTML rapor uret
+  --firma <ad>            Raporun ustunde gorunecek firma adi
   --urunler               Referans tablosundaki urunleri listele
   --yardim                Bu metni goster
 
@@ -64,6 +66,10 @@ ORNEKLER
   # Kendi tesis verinizle
   Rscript hesapla.R --miktar 120000 --yogunluk 1.72 --benchmark 1.288 \\
                     --yil 2030 --karbon-fiyati 85 --kur 48
+
+  # Paylasilabilir HTML rapor
+  Rscript hesapla.R --urun celik-bof --miktar 250000 --yil 2030 --kur 48 \\
+                    --firma \'Ornek Celik A.S.\' --rapor cikti/rapor.html
 
   # Turkiye'de karbon odemesi yapilmis ise
   Rscript hesapla.R --urun celik-bof --miktar 250000 --yil 2030 \\
@@ -214,3 +220,15 @@ sonuc <- tryCatch(
 )
 
 print(sonuc)
+
+if (!is.null(opt[["rapor"]])) {
+  yol <- tryCatch(
+    cbam_rapor(sonuc, opt[["rapor"]], firma = opt[["firma"]]),
+    error = function(e) {
+      cat(sprintf("HATA: rapor uretilemedi - %s\n", conditionMessage(e)))
+      quit(status = 1)
+    }
+  )
+  cat(sprintf("Rapor yazildi: %s\n", normalizePath(yol, winslash = "/")))
+  cat("Tarayicida acip PDF olarak yazdirabilirsiniz.\n\n")
+}

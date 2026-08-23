@@ -326,6 +326,60 @@ expect_error("sifir kur reddedilir",
 expect_error("vektor girdi reddedilir",
              cbam_estimate(c(1000, 2000), 1.9, 1.288, uncertainty = FALSE))
 
+cat("\n== report.R ==\n")
+expect("html_kacis ozel karakterleri kacirir",
+       html_kacis("<a href=\"x\">A&B</a>") ==
+         "&lt;a href=&quot;x&quot;&gt;A&amp;B&lt;/a&gt;")
+
+rapor_dosya <- file.path(tempdir(), "cbam_test_rapor.html")
+if (file.exists(rapor_dosya)) file.remove(rapor_dosya)
+est_rapor <- cbam_estimate(250000, 1.95, 1.288, year = 2030,
+                           carbon_price = 80, fx_rate = 48,
+                           n_sims = 3000, seed = 2026,
+                           reference = cbam_product("celik-bof"))
+cbam_rapor(est_rapor, rapor_dosya, firma = "Test A.S.")
+rapor_html <- paste(readLines(rapor_dosya, warn = FALSE), collapse = "\n")
+
+expect("rapor dosyasi olusturuldu", file.exists(rapor_dosya))
+# Rapor tek dosya olmali: internet olmadan acilmali, e-postayla gonderilmeli.
+expect("rapor disaridan hicbir sey yuklemiyor",
+       !grepl("src=|href=\"http|@import|fetch\\(", rapor_html))
+expect("rapor gecerli HTML iskeletiyle basliyor",
+       grepl("^<!doctype html>", rapor_html) &&
+         grepl("</html>$", trimws(rapor_html)))
+expect("rapor firma adini tasiyor", grepl("Test A.S.", rapor_html, fixed = TRUE))
+expect("rapor hesap adimlarini gosteriyor",
+       grepl("Gomulu emisyon", rapor_html, fixed = TRUE) &&
+         grepl("Ucretsiz tahsisat", rapor_html, fixed = TRUE))
+expect("rapor dagilim grafigi iceriyor",
+       grepl("<svg", rapor_html, fixed = TRUE) &&
+         length(gregexpr("<rect", rapor_html)[[1]]) > 5)
+expect("rapor provenans bloku iceriyor",
+       grepl("Rastgele tohum", rapor_html, fixed = TRUE) &&
+         grepl("2026", rapor_html, fixed = TRUE))
+# AGPL 7(b) atif sarti: kunye her raporda gomulu gelmeli.
+expect("rapor kunyeyi tasiyor",
+       grepl("0009-0007-4824-752X", rapor_html, fixed = TRUE) &&
+         grepl("AGPL", rapor_html, fixed = TRUE))
+expect("dogrulanmamis veri raporda uyari uretiyor",
+       grepl("DOGRULANMAMIS", rapor_html, fixed = TRUE))
+expect("referanssiz raporda dogrulama uyarisi cikmaz",
+       { f3 <- file.path(tempdir(), "cbam_test_rapor3.html")
+         e3 <- cbam_estimate(1000, 1.9, 1.288, year = 2030,
+                             uncertainty = FALSE)
+         cbam_rapor(e3, f3)
+         h3 <- paste(readLines(f3, warn = FALSE), collapse = "\n")
+         !grepl("DOGRULANMAMIS", h3, fixed = TRUE) &&
+           grepl("kullanici girdisi", h3, fixed = TRUE) })
+expect("kesin modda rapor belirsizlik bolumu icermez",
+       { f2 <- file.path(tempdir(), "cbam_test_rapor2.html")
+         e2 <- cbam_estimate(1000, 1.9, 1.288, year = 2030, uncertainty = FALSE)
+         cbam_rapor(e2, f2)
+         h2 <- paste(readLines(f2, warn = FALSE), collapse = "\n")
+         !grepl("Belirsizlik", h2, fixed = TRUE) })
+expect_error("rapor yanlis girdi tipini reddeder",
+             cbam_rapor(data.frame(a = 1), file.path(tempdir(), "x.html")))
+
 cat(sprintf("\n=====================================\n"))
 cat(sprintf("Toplam: %d gecti, %d kaldi\n", passed, failed))
 cat(sprintf("=====================================\n"))
