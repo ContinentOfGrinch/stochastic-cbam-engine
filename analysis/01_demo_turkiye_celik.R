@@ -102,10 +102,10 @@ for (route_name in names(routes)) {
                 fmt_ci(sim$draws$cost_eur)))
     cat(sprintf("    medyan                     : %14s EUR\n",
                 fmt_num(median(sim$draws$cost_eur))))
-    cat(sprintf("  Maliyet TRY  [%%90 GA]        : %s\n",
-                fmt_ci(sim$draws$cost_local)))
-    cat(sprintf("    medyan                     : %14s TRY\n",
-                fmt_num(median(sim$draws$cost_local))))
+    # Bugunku kurla: varsayim icermez. Nominal kur suruklemesiyle hesaplanan
+    # tutar da mevcut (cost_local) ama planlamada kullanilacak olan bu degil.
+    cat(sprintf("  Maliyet TRY (bugunku kur)    : %14s TRY (medyan)\n",
+                fmt_num(median(sim$draws$cost_local_today))))
     cat(sprintf("  VaR (%%95)                    : %14s EUR\n",
                 fmt_num(cbam_var(sim, 0.95))))
     cat(sprintf("  Ton basina yuk               : %14s EUR/ton\n",

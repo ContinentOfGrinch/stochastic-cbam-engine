@@ -175,7 +175,7 @@ cbam_var(sim, level = 0.95)
 Test ve demo:
 
 ```bash
-Rscript tests/test_engine.R                   # 134 test
+Rscript tests/test_engine.R                   # 141 test
 Rscript analysis/01_demo_turkiye_celik.R      # EAF vs BF-BOF senaryo demosu
 ```
 
@@ -234,7 +234,7 @@ data-raw/
   exiobase/       Büyük MRIO matrisleri (versiyonlanmaz)
   firma/          Firma düzeyi veri (versiyonlanmaz)
 tests/
-  test_engine.R   134 test (base R, harici test paketi gerektirmez)
+  test_engine.R   141 test (base R, harici test paketi gerektirmez)
 LICENSE                        AGPL-3.0 tam metni
 LICENSE-ADDITIONAL-TERMS.md    Atıf ek şartı (AGPL §7(b)) + marka notu
 NOTICE                         Telif, atıf ve veri kaynağı bildirimleri
@@ -262,7 +262,7 @@ Katmanlar ayrıdır: `R/` altındaki motor saf hesap yapar ve hiçbir yere yazma
 
 - [ ] Resmî AB belgelerinden değerlerin doğrulanması (`data-raw/mevzuat/`)
 - [x] Sürekli entegrasyon (GitHub Actions) — 3 işletim sistemi, R 4.2 ve güncel
-- [ ] Reel/nominal ayrımı — TRY rakamları nominal kur sürüklemesinin etkisinde
+- [x] Reel/nominal ayrımı — kur sürüklemesi enflasyon farkından türetiliyor
 
 **v1.0 sonrası:**
 

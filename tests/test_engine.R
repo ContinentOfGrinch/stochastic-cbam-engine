@@ -136,6 +136,28 @@ expect("simulate_market dogru boyutta",
 expect("sifir ufukta belirsizlik yok",
        { m <- simulate_market(500, 80, fx_0 = 48, horizon = 0)
          all(abs(m$carbon_price - 80) < 1e-9) && all(abs(m$fx_rate - 48) < 1e-9) })
+# --- K6: reel / nominal ayrimi ---------------------------------------------
+# Onceki hali sabit fx_mu = 0.20 idi ve kaynaksizdi; sekiz yil bileşiklenince
+# 2034 icin ~238 TRY/EUR ima ediyordu. Simdi enflasyon farkindan turetiliyor.
+expect("kur suruklemesi enflasyon farkindan turetilir",
+       { m <- simulate_market(200000, 80, fx_0 = 48, fx_sigma = 0,
+                              inflation_tr = 0.25, inflation_eu = 0.02,
+                              horizon = 1)
+         beklenen <- 48 * (1.25 / 1.02)
+         abs(median(m$fx_rate) - beklenen) / beklenen < 0.01 })
+expect("enflasyon esitse kur sabit kalir",
+       { m <- simulate_market(1000, 80, fx_0 = 48, fx_sigma = 0,
+                              inflation_tr = 0.10, inflation_eu = 0.10,
+                              horizon = 5)
+         all(abs(m$fx_rate - 48) < 1e-6) })
+expect("fx_mu elle verilirse enflasyonun onune gecer",
+       { m <- simulate_market(1000, 80, fx_0 = 48, fx_mu = 0, fx_sigma = 0,
+                              inflation_tr = 0.25, horizon = 3)
+         all(abs(m$fx_rate - 48) < 1e-6) })
+expect("deflator enflasyon ve ufuktan hesaplanir",
+       { m <- simulate_market(10, 80, inflation_tr = 0.25, horizon = 4)
+         abs(m$deflator_tr[1] - 1.25^4) < 1e-9 })
+
 expect("ufuk buyudukce dagilim genisler",
        { set.seed(4)
          s1 <- sd(simulate_market(50000, 80, horizon = 1)$carbon_price)
@@ -174,6 +196,17 @@ expect("tum maliyetler negatif degil", all(sim$draws$cost_eur >= 0))
 expect("yerel maliyet = EUR * kur",
        max(abs(sim$draws$cost_local -
                sim$draws$cost_eur * sim$draws$fx_rate)) < 1e-6)
+expect("bugunku kur sutunu varsayim icermez",
+       max(abs(sim$draws$cost_local_today -
+               sim$draws$cost_eur * sim$inputs$fx_0)) < 1e-6)
+expect("reel tutar nominalden kucuk (pozitif enflasyonda)",
+       { s <- run_cbam_mc(2000, 50000, 1.9, benchmark = 1.288, year = 2034,
+                          base_year = 2026, fx_0 = 48, seed = 9)
+         median(s$draws$cost_local_real) < median(s$draws$cost_local) })
+expect("risk_summary ucunu de raporlar",
+       { rs <- risk_summary(sim)
+         all(c("cost_local_today", "cost_local_real", "cost_local")
+             %in% rownames(rs)) })
 expect("ayni tohum ayni sonucu verir",
        { s2 <- run_cbam_mc(n_sims = 5000, quantity = 50000, ei_sector = 1.9,
                            benchmark = 1.288, year = 2030,
@@ -190,7 +223,7 @@ expect("2034 maliyeti 2026'dan yuksek",
                           year = 2034, seed = 7)
          median(b$draws$cost_eur) > median(a$draws$cost_eur) })
 expect("risk_summary tum metrikleri dondurur",
-       { rs <- risk_summary(sim); nrow(rs) == 4 && "5%" %in% colnames(rs) })
+       { rs <- risk_summary(sim); nrow(rs) == 6 && "5%" %in% colnames(rs) })
 expect("VaR medyandan buyuk",
        cbam_var(sim, 0.95) > median(sim$draws$cost_eur))
 expect_error("risk_summary yanlis girdiyi reddeder",

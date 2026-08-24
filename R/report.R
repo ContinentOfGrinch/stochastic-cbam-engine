@@ -174,7 +174,8 @@ cbam_rapor <- function(x, dosya, baslik = "CBAM Maliyet Raporu", firma = NULL) {
                 fmt_num(d$cost_eur), "EUR", "toplam"))
   if (i$fx_rate != 1) {
     satirlar <- c(satirlar,
-      rapor_satir("", sprintf("x %s TRY/EUR", fmt_num(i$fx_rate, 2)),
+      rapor_satir("", sprintf("x %s TRY/EUR (bugunku kur)",
+                              fmt_num(i$fx_rate, 2)),
                   fmt_num(d$cost_local), "TRY"))
   }
 

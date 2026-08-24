@@ -63,19 +63,36 @@ correlated_shocks <- function(n_sims, rho = 0) {
 #' @param fx_mu Kur yillik suruklemesi.
 #' @param fx_sigma Kur yillik volatilitesi.
 #' @param rho Karbon fiyati ile kur arasindaki korelasyon.
+#' @param inflation_tr Turkiye yillik enflasyon varsayimi.
+#' @param inflation_eu Avro Alani yillik enflasyon varsayimi.
 #' @param horizon Zaman ufku (yil). 0 -> belirsizlik yok, baslangic degerleri
 #'   aynen dondurulur.
 #' @return \code{carbon_price} ve \code{fx_rate} sutunlarini iceren data.frame.
 simulate_market <- function(n_sims,
                             carbon_price_0,
-                            carbon_mu = 0.05,
+                            carbon_mu = 0.02,
                             carbon_sigma = 0.35,
                             fx_0 = 1,
-                            fx_mu = 0.20,
+                            fx_mu = NULL,
                             fx_sigma = 0.18,
                             rho = 0.20,
+                            inflation_tr = 0.25,
+                            inflation_eu = 0.02,
                             horizon = 1) {
   stopifnot(horizon >= 0)
+
+  # Kur suruklemesi elle verilen bir sayi degil, enflasyon farkindan
+  # turetilir (goreli satin alma gucu paritesi):
+  #
+  #     beklenen nominal kur degisimi ~ TR enflasyonu - AB enflasyonu
+  #
+  # Onceki hali sabit %20 idi ve kaynaksizdi: sekiz yil bileşiklenince
+  # 2034 icin ~238 TRY/EUR ima ediyordu. O bir tahmin degil, mekanik bir
+  # ekstrapolasyon artefaktiydi. Simdi varsayim gorunur ve degistirilebilir.
+  if (is.null(fx_mu)) {
+    fx_mu <- log((1 + inflation_tr) / (1 + inflation_eu))
+  }
+
   z <- correlated_shocks(n_sims, rho)
 
   carbon <- carbon_price_0 * exp(
@@ -87,5 +104,12 @@ simulate_market <- function(n_sims,
       fx_sigma * sqrt(horizon) * z[, 2]
   )
 
-  data.frame(carbon_price = carbon, fx_rate = fx)
+  # Nominal TRY tutarlari, bugunun parasiyla karsilastirilabilir olsun diye
+  # bu deflator ile bolunur. Sabit reel kur varsayiminda sonuc, bugunku
+  # kurla hesaplanan tutara yakinsar - okunabilir olan da odur.
+  data.frame(
+    carbon_price = carbon,
+    fx_rate      = fx,
+    deflator_tr  = (1 + inflation_tr)^horizon
+  )
 }

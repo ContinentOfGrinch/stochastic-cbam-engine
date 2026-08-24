@@ -58,6 +58,8 @@ cbam_estimate <- function(quantity,
                           base_year = 2026,
                           n_sims = 50000,
                           seed = 2026,
+                          inflation_tr = 0.25,
+                          inflation_eu = 0.02,
                           reference = NULL,
                           ...) {
   stopifnot(is.numeric(quantity), is.numeric(ei_direct), is.numeric(benchmark))
@@ -108,6 +110,8 @@ cbam_estimate <- function(quantity,
       fx_0               = fx_rate,
       carbon_paid_origin = carbon_paid_origin,
       seed               = seed,
+      inflation_tr       = inflation_tr,
+      inflation_eu       = inflation_eu,
       ...
     )
   }
@@ -133,7 +137,8 @@ cbam_estimate <- function(quantity,
         carbon_price = carbon_price, fx_rate = fx_rate,
         carbon_paid_origin = carbon_paid_origin,
         theta_sdlog = theta_sdlog, base_year = base_year,
-        horizon = max(year - base_year, 0), n_sims = n_sims, seed = seed
+        horizon = max(year - base_year, 0), n_sims = n_sims, seed = seed,
+        inflation_tr = inflation_tr, inflation_eu = inflation_eu
       )
     ),
     class = "cbam_estimate"
@@ -258,6 +263,30 @@ print.cbam_estimate <- function(x, ...) {
     cat("\n")
     cat("  Butcelenmesi gereken rakam %95 senaryosudur; medyan zamanin\n")
     cat("  yarisinda asilir.\n")
+
+    if (i$fx_rate != 1) {
+      qt <- stats::quantile(s$draws$cost_local_today, c(0.05, 0.50, 0.95))
+      qn <- stats::quantile(s$draws$cost_local, c(0.50, 0.95))
+      cat("\n  TRY karsiligi - iki ayri soru, iki ayri rakam:\n\n")
+      cat(sprintf("    %-28s %-7s %17s TRY\n",
+                  sprintf("Bugunku kurla (%s TRY/EUR)", fmt_num(i$fx_rate, 0)),
+                  "medyan", fmt_num(qt[2])))
+      cat(sprintf("    %-28s %-7s %17s TRY\n", "", "%95", fmt_num(qt[3])))
+      cat(sprintf("    %-28s %-7s %17s TRY\n",
+                  sprintf("%d nominal kuruyla", i$year),
+                  "medyan", fmt_num(qn[1])))
+      cat(sprintf("    %-28s %-7s %17s TRY\n", "", "%95", fmt_num(qn[2])))
+      if (i$horizon > 0) {
+        cat(sprintf(paste0(
+          "\n  Nominal rakam kur suruklemesi varsayimina baglidir ve %g yil\n",
+          "  boyunca bilesiklenir. Planlamada BUGUNKU KURLA satirini kullanin.\n",
+          "  Kur varsayimi enflasyon farkindan turetilir (TR %%%s / AB %%%s),\n",
+          "  elle secilmis bir sayi degildir.\n"),
+          i$horizon,
+          fmt_num(100 * i$inflation_tr, 1),
+          fmt_num(100 * i$inflation_eu, 1)))
+      }
+    }
   }
 
   cat("\n"); cat(line, "\n")

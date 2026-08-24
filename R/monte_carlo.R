@@ -115,15 +115,23 @@ run_cbam_mc <- function(n_sims = 10000,
   # 5) Maliyet
   cost <- cbam_cost(certs, market$carbon_price, market$fx_rate)
 
+  # Uc ayri TRY tutari, cunku uc ayri soruya cevap veriyorlar:
+  #   cost_local_today : bugunku kurla. "Bu bugun olsaydi ne oderdim?"
+  #                      Varsayim icermez, en savunulabilir olanidir.
+  #   cost_local       : o yilin nominal kuruyla. Faturada gorunecek rakam,
+  #                      ama tamamen kur suruklemesi varsayimina bagli.
+  #   cost_local_real  : nominal tutarin bugunun alim gucune indirgenmisi.
   draws <- data.frame(
-    theta          = theta,
-    ei_firm        = ei_firm,
-    embedded       = embedded,
-    certificates   = certs,
-    carbon_price   = market$carbon_price,
-    fx_rate        = market$fx_rate,
-    cost_eur       = cost$cost_eur,
-    cost_local     = cost$cost_local
+    theta            = theta,
+    ei_firm          = ei_firm,
+    embedded         = embedded,
+    certificates     = certs,
+    carbon_price     = market$carbon_price,
+    fx_rate          = market$fx_rate,
+    cost_eur         = cost$cost_eur,
+    cost_local_today = cost$cost_eur * fx_0,
+    cost_local       = cost$cost_local,
+    cost_local_real  = cost$cost_local / market$deflator_tr
   )
 
   structure(
@@ -151,7 +159,8 @@ risk_summary <- function(x, probs = c(0.05, 0.25, 0.50, 0.75, 0.95)) {
   if (!inherits(x, "cbam_mc")) {
     stop("x, run_cbam_mc() ciktisi olmali.")
   }
-  metrics <- c("embedded", "certificates", "cost_eur", "cost_local")
+  metrics <- c("embedded", "certificates", "cost_eur",
+               "cost_local_today", "cost_local_real", "cost_local")
   out <- lapply(metrics, function(m) {
     v <- x$draws[[m]]
     c(mean = mean(v), sd = stats::sd(v), stats::quantile(v, probs))
