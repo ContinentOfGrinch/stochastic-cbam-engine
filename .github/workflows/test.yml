@@ -53,21 +53,14 @@ jobs:
           Rscript hesapla.R --cn 72081000 --yogunluk 1.95 --miktar 250000 --yil 2030 --kur 48 --kesin
         shell: bash
 
+      # Kontrol ayri bir dosyada: satir ici "Rscript -e" ile cok satirli
+      # tirnakli argüman gecirmek Windows'ta guvenilir degil.
       - name: Rapor uretiliyor ve kendi kendine yetiyor mu
         run: |
-          Rscript hesapla.R --cn 72081000 --yogunluk 1.95 --miktar 250000 \
-            --yil 2030 --kur 48 --simulasyon 2000 --rapor cikti/ci.html
-          Rscript -e '
-            h <- paste(readLines("cikti/ci.html", warn = FALSE), collapse = "\n")
-            if (grepl("src=|href=\"http|@import", h)) {
-              stop("Rapor disaridan kaynak yukluyor - tek dosya olma sarti ihlal edildi.")
-            }
-            if (!grepl("0009-0007-4824-752X", h, fixed = TRUE)) {
-              stop("Rapor kunyeyi tasimiyor - AGPL 7(b) atif sarti ihlal edildi.")
-            }
-            cat("rapor tek dosya ve kunyeli\n")'
+          Rscript hesapla.R --cn 72081000 --yogunluk 1.95 --miktar 250000 --yil 2030 --kur 48 --simulasyon 2000 --rapor cikti/ci.html
+          Rscript tests/check_report.R cikti/ci.html
         shell: bash
 
       - name: Demo calisiyor mu
-        run: Rscript analysis/01_demo_turkiye_celik.R > /dev/null
+        run: Rscript analysis/01_demo_turkiye_celik.R
         shell: bash
