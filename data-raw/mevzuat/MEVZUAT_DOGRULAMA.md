@@ -13,8 +13,8 @@ Kodun mevzuata dair **8 iddiası** ve her birinin doğrulama durumu.
 | D4 | De minimis eşiği | ⬜ Açık |
 | D5 | 2026 öncesi mali yükümlülük yok | ✅ Doğrulandı |
 | D6 | Dolaylı emisyon kapsamı | ✅ **DOĞRULANDI** |
-| D7 | Benchmark değerleri | ⬜ Açık — kaynak belirlendi |
-| D8 | CN kodları | ⬜ Açık |
+| D7 | Benchmark değerleri | ✅ **DOĞRULANDI — 570 CN kodu resmî tablodan** |
+| D8 | CN kodları | ✅ **DOĞRULANDI — resmî tablodan geldi** |
 
 ---
 
@@ -167,29 +167,54 @@ Rehber No. 3, s.21: CO₂ tüm sektörlerde; ayrıca **gübre için N₂O**,
 
 ---
 
-## ⬜ D7 — Benchmark değerleri — kaynak belirlendi
+## ✅ D7 + D8 — Benchmark değerleri ve CN kodları — **DOĞRULANDI**
 
-**Kaynak:** Free Allocation Adjustment Act (CIR (EU) 2025/2620), **Ek nokta 5,
-Column A**. Komisyon ayrıca hazır bir tablo yayımlamış:
+**Kaynak:** `CBAM-Benchmarks-20260206.xlsx` (bu klasörde), Free Allocation
+Adjustment Act (CIR (EU) 2025/2620) Ek nokta 5'in Komisyon tarafından
+yayımlanmış hâli.
 
-```
-CBAM Benchmarks_20260206.xlsx
-taxation-customs.ec.europa.eu → CBAM legislation and guidance
-```
+**570 CN kodu** `data/benchmarks.csv`'ye aktarıldı; hepsi `dogrulandi`:
 
-Rehber No. 4 s.6'daki ilgili ürün benchmark listesi: aglomere demir cevheri,
-sıcak metal, EAF karbon çeliği, EAF yüksek alaşımlı çelik, demir döküm,
-birincil alüminyum, gri çimento klinkeri, beyaz çimento klinkeri (devamı var).
+| Sektör | CN kodu sayısı |
+|---|---|
+| Demir & Çelik | 478 |
+| Alüminyum | 58 |
+| Gübre | 27 |
+| Çimento | 6 |
+| Hidrojen | 1 |
 
-> ⚠️ **Dikkat:** Bu listede **ikincil alüminyum yok.** `alu-ikincil` için
-> kullandığımız 0,279 değerinin karşılığı olmayabilir. Değer girilirken
-> kontrol edilmeli.
+### Yer tutucu değerlerimiz yanlıştı
 
----
+| Ne | Bizimki | Resmî |
+|---|---|---|
+| Birincil alüminyum (CN 76011090) | 1,484 | **1,423** |
+| Sıcak haddelenmiş rulo (CN 72081000) | 1,288 | **1,370** (Column B) |
+| İkincil alüminyum | 0,279 | **Böyle bir benchmark yok** |
 
-## ⬜ D8 — Kapsamdaki ürünler ve CN kodları
+### Yapısal bulgu — Column A / Column B
 
-`urunler.csv` → `cn_kodlari` sütunu boş. CBAM Tüzüğü Ek I'den girilecek.
+Benchmark **CN kodu başına** tanımlı, üretim rotası başına değil. İki sütun var:
+
+| Sütun | Anlamı | Örnek (CN 72081000) |
+|---|---|---|
+| **A** | Tek üretim süreci | **0,044** — yalnızca haddeleme yapan tesis |
+| **B** | Tüm üretim zinciri | **1,370** — cevherden üreten entegre tesis |
+
+**Yanlış sütun 31 kat hata demektir.** Kaynak: Rehber No. 4 s.9, dipnot 7-8.
+
+Bu, projenin uydurduğu "üretim rotası" taksonomisinin (EAF/BF-BOF) mevzuatın
+modeliyle örtüşmediğini gösterdi. Model CN koduna geçirildi; kullanıcı
+`--cn` ile gümrük beyanındaki kodu veriyor, benchmark resmî tablodan geliyor.
+
+### Hâlâ doğrulanmamış: emisyon yoğunlukları
+
+`urunler.csv`'deki `varsayilan_yogunluk` değerleri **sektör tahminidir.**
+Bunlar mevzuattan gelmez — tesise özgüdür. İki yol var:
+1. Kullanıcı kendi ölçtüğü değeri `--yogunluk` ile verir (doğru yol)
+2. Default Values Act (CIR (EU) 2025/2621) varsayılan değerleri girilir
+
+Araç bunu her çıktıda ayrı ayrı işaretliyor: *"Benchmark: doğrulandı /
+Yoğunluk: sektör tahmini"*.
 
 ---
 

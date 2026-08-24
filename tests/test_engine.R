@@ -245,28 +245,58 @@ expect("urun katalogu bos degil", nrow(urunler) > 0)
 expect("veri surumu tanimli", nchar(cbam_data_version()) > 0)
 expect("urun kodlari benzersiz",
        !any(duplicated(urunler$urun_kodu)))
-expect("benchmark kodlari benzersiz",
-       !any(duplicated(benchmarks$urun_kodu)))
-expect("her urunun benchmark'i var",
-       all(urunler$urun_kodu %in% benchmarks$urun_kodu))
-expect("her benchmark bir urune ait",
-       all(benchmarks$urun_kodu %in% urunler$urun_kodu))
+expect("CN kodlari benzersiz",
+       !any(duplicated(benchmarks$cn_kodu)))
+expect("her urunun CN kodu benchmark tablosunda var",
+       all(urunler$cn_kodu %in% benchmarks$cn_kodu))
+expect("benchmark tablosu resmi buyuklukte (500+ CN kodu)",
+       nrow(benchmarks) > 500)
+expect("benchmark tablosunun tamami dogrulandi",
+       all(trimws(benchmarks$durum) == "dogrulandi"))
+expect("her benchmark satirinin kaynagi var",
+       all(nzchar(trimws(benchmarks$kaynak_belge))))
 expect("girilmis yogunluk degerleri pozitif",
        { v <- urunler$varsayilan_yogunluk
          all(v[!is.na(v)] > 0) })
-expect("girilmis benchmark degerleri pozitif",
-       { v <- benchmarks$benchmark_tco2e_ton
-         all(v[!is.na(v)] > 0) })
+expect("benchmark degerleri negatif degil",
+       { all(benchmarks$bm_column_a[!is.na(benchmarks$bm_column_a)] >= 0) &&
+           all(benchmarks$bm_column_b[!is.na(benchmarks$bm_column_b)] >= 0) })
+# Column B tum uretim zinciri, Column A tek surec: B >= A olmali.
+expect("Column B her zaman Column A'dan kucuk degil",
+       { a <- benchmarks$bm_column_a
+         b <- benchmarks$bm_column_b
+         ok <- !is.na(a) & !is.na(b)
+         all(b[ok] >= a[ok] - 1e-9) })
 expect("girilmis sacilim degerleri makul araliktan",
        { v <- urunler$varsayilan_sacilim
          all(v[!is.na(v)] >= 0 & v[!is.na(v)] < 2) })
-expect("her sektorde en az bir urun tanimli",
-       { s <- unique(urunler$sektor)
-         all(c("demir-celik", "aluminyum", "cimento", "gubre", "hidrojen")
-             %in% s) })
+expect("benchmark tablosu tum CBAM sektorlerini kapsiyor",
+       all(c("Cement", "Fertilisers", "Iron & Steel", "Aluminium", "Hydrogen")
+           %in% unique(benchmarks$sektor)))
+
+# --- D7/D8: CN kodu ile benchmark cozumleme -------------------------------
+expect("CN kodu ile benchmark bulunur",
+       { b <- cbam_benchmark_by_cn("72081000")
+         abs(b$benchmark - 1.370) < 1e-9 && b$sutun == "B" })
+expect("Column A tek uretim sureci degerini verir",
+       { b <- cbam_benchmark_by_cn("72081000", "A")
+         abs(b$benchmark - 0.044) < 1e-9 })
+expect("birincil aluminyum resmi degeri 1,423",
+       abs(cbam_benchmark_by_cn("76011090")$benchmark - 1.423) < 1e-9)
+expect("hidrojen resmi degeri 5,089",
+       abs(cbam_benchmark_by_cn("28041000")$benchmark - 5.089) < 1e-9)
+expect("CN kodundaki bosluk ve nokta temizlenir",
+       { abs(cbam_benchmark_by_cn(" 7208 10 00 ")$benchmark - 1.370) < 1e-9 })
+expect("benchmark kaynagi ciktida tasinir",
+       nzchar(cbam_benchmark_by_cn("72081000")$kaynak))
+expect_error("kapsam disi CN kodu net hata verir",
+             cbam_benchmark_by_cn("99999999"))
+expect_error("bos CN kodu reddedilir", cbam_benchmark_by_cn(""))
+expect_error("gecersiz sutun reddedilir",
+             cbam_benchmark_by_cn("72081000", "C"))
 expect("durum degerleri gecerli",
-       all(c(urunler$durum, benchmarks$durum) %in%
-             c("dogrulandi", "dogrulanmadi")))
+       all(trimws(c(urunler$durum, benchmarks$durum)) %in%
+             c("dogrulandi", "dogrulanmadi", "kismen")))
 
 # Kritik kural: bir satir "dogrulandi" diyorsa kaynagini gostermek ZORUNDA.
 # Bu test olmadan biri kaynaksiz bir degeri resmi gibi isaretleyebilir.
@@ -283,8 +313,17 @@ expect("degeri girilmis urunler icin cbam_product calisir",
            all(vapply(hazir, function(k) {
              p <- cbam_product(k)
              is.numeric(p$benchmark) && p$benchmark > 0 &&
-               is.numeric(p$varsayilan_yogunluk)
+               is.numeric(p$varsayilan_yogunluk) &&
+               isTRUE(p$benchmark_dogrulandi)
            }, logical(1))) })
+expect("urun benchmark'i CN kodu uzerinden resmi tablodan gelir",
+       { p <- cbam_product("celik-hrc")
+         b <- cbam_benchmark_by_cn(p$cn_kodu)
+         abs(p$benchmark - b$benchmark) < 1e-12 })
+expect("sutun secimi urun cozumlemesine de gecer",
+       { pa <- cbam_product("celik-hrc", "A")
+         pb <- cbam_product("celik-hrc", "B")
+         pb$benchmark > pa$benchmark })
 # Iskelet satirlar sessizce NA ile hesaba girmemeli.
 expect("degeri girilmemis urun net hata verir",
        { bos <- urunler$urun_kodu[is.na(urunler$varsayilan_yogunluk)]
@@ -374,7 +413,7 @@ if (file.exists(rapor_dosya)) file.remove(rapor_dosya)
 est_rapor <- cbam_estimate(250000, 1.95, 1.288, year = 2030,
                            carbon_price = 80, fx_rate = 48,
                            n_sims = 3000, seed = 2026,
-                           reference = cbam_product("celik-bof"))
+                           reference = cbam_product("celik-hrc"))
 cbam_rapor(est_rapor, rapor_dosya, firma = "Test A.S.")
 rapor_html <- paste(readLines(rapor_dosya, warn = FALSE), collapse = "\n")
 

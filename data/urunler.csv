@@ -1,13 +1,9 @@
-urun_kodu,urun_adi,sektor,cn_kodlari,dolayli_kapsamda,varsayilan_yogunluk,varsayilan_sacilim,kaynak_belge,kaynak_yeri,durum,not
-celik-bof,Entegre tesis (BF-BOF),demir-celik,,hayir,1.950,0.20,,,dogrulanmadi,Sektor ortalamasi tahmini - resmi deger degil
-celik-eaf,Elektrik ark ocagi (EAF),demir-celik,,hayir,0.250,0.30,,,dogrulanmadi,Sektor ortalamasi tahmini - resmi deger degil
-alu-birincil,Birincil aluminyum (elektroliz),aluminyum,,hayir,1.700,0.15,,,dogrulanmadi,D6 dolayli kapsam DOGRULANMALI - 136 vs 608 EUR/ton farki
-alu-ikincil,Ikincil aluminyum (hurda/remelt),aluminyum,,hayir,0.350,0.25,,,dogrulanmadi,D6 dolayli kapsam DOGRULANMALI
-cimento-klinker,Cimento klinkeri,cimento,,evet,,,GUIDANCE-4,s.19-20 (dolayli kapsam),dogrulanmadi,Birim TON KLINKER - ton urun degil. Deger girilmedi
-cimento,Cimento,cimento,,evet,,,GUIDANCE-4,s.19-20 (dolayli kapsam),dogrulanmadi,Birim TON KLINKER - ton urun degil. Deger girilmedi
-gubre-amonyak,Amonyak,gubre,,evet,,,GUIDANCE-4,s.19-20 (dolayli kapsam),dogrulanmadi,Birim KG AZOT - ton urun degil. N2O da kapsamda. Deger girilmedi
-gubre-nitrik-asit,Nitrik asit,gubre,,evet,,,GUIDANCE-4,s.19-20 (dolayli kapsam),dogrulanmadi,Birim KG AZOT. N2O da kapsamda. Deger girilmedi
-gubre-ure,Ure,gubre,,evet,,,GUIDANCE-4,s.19-20 (dolayli kapsam),dogrulanmadi,Birim KG AZOT. Deger girilmedi
-gubre-karisik,Karisik gubre,gubre,,evet,,,GUIDANCE-4,s.19-20 (dolayli kapsam),dogrulanmadi,Birim KG AZOT. Deger girilmedi
-hidrojen,Hidrojen,hidrojen,,hayir,,,GUIDANCE-4,s.19-20 (Ek II'de),dogrulanmadi,Deger girilmedi
-demir-sinter,Aglomere demir cevheri (sinter),demir-celik,,evet,,,GUIDANCE-4,s.19-20 (Ek II disinda),dogrulanmadi,Ek II disinda - dolayli emisyon KAPSAMDA. Deger girilmedi
+urun_kodu,urun_adi,sektor,cn_kodu,dolayli_kapsamda,varsayilan_yogunluk,varsayilan_sacilim,kaynak_belge,kaynak_yeri,durum,not
+celik-hrc,Sicak haddelenmis rulo (HRC),demir-celik,72081000,hayir,1.950,0.20,GUIDANCE-3,s.19-20 (dolayli kapsam),kismen,Yogunluk sektor tahmini - DOGRULANMADI. Benchmark ve dolayli kapsam dogrulandi
+celik-pik,Pik demir,demir-celik,72011011,hayir,1.950,0.20,GUIDANCE-3,s.19-20 (dolayli kapsam),kismen,Yogunluk sektor tahmini - DOGRULANMADI
+celik-kutuk,Celik kutuk (yari mamul),demir-celik,72071190,hayir,1.950,0.20,GUIDANCE-3,s.19-20 (dolayli kapsam),kismen,Yogunluk sektor tahmini - DOGRULANMADI
+demir-sinter,Aglomere demir cevheri (sinter),demir-celik,26011200,evet,,,GUIDANCE-3,s.19-20 (Ek II disinda),kismen,Yogunluk girilmedi. Dolayli emisyon KAPSAMDA
+alu-ham,Ham aluminyum (alasimsiz),aluminyum,76011090,hayir,1.700,0.15,GUIDANCE-3,s.19-20 (dolayli kapsam),kismen,Yogunluk sektor tahmini - DOGRULANMADI
+alu-alasim,Ham aluminyum alasimi,aluminyum,76012080,hayir,1.700,0.15,GUIDANCE-3,s.19-20 (dolayli kapsam),kismen,Yogunluk sektor tahmini - DOGRULANMADI
+cimento-klinker,Cimento klinkeri,cimento,25231000,evet,,,GUIDANCE-3,s.19-20 (Ek II disinda),kismen,BIRIM TON KLINKER. Yogunluk girilmedi
+hidrojen,Hidrojen,hidrojen,28041000,hayir,,,GUIDANCE-3,s.19-20 (Ek II'de),kismen,Yogunluk girilmedi

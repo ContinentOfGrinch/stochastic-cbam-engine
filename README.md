@@ -20,8 +20,10 @@ Bu proje, AB Sınırda Karbon Düzenleme Mekanizması'nın (SKDM) ihracatçılar
 Piyasadaki kapalı kutu (black-box) danışmanlık araçlarının aksine, bu altyapı **açık bilim (open-science)** ve **tekrarlanabilirlik (reproducibility)** ilkeleriyle inşa edilmiştir.
 
 * **Odak Ülke:** Türkiye
-* **Odak Sektör:** Demir ve Çelik (Modüler yapı ile genişletilebilir)
-* **Veritabanı:** EXIOBASE / WIOD
+* **Kapsam:** CBAM'in yürürlükteki tüm sektörleri — demir-çelik, alüminyum,
+  çimento, gübre, hidrojen (570 CN kodu). Elektrik ayrı hesap yolu gerektirdiği
+  için henüz kapsam dışı.
+* **Referans veri:** Avrupa Komisyonu resmî benchmark tablosu (Şubat 2026)
 
 ## Hızlı Başlangıç
 
@@ -31,28 +33,36 @@ Gereksinim: **R ≥ 4.0**. Harici paket bağımlılığı yoktur — yalnızca `
 
 Kendi rakamlarınızı girin, yıllık CBAM maliyetinizi hesaplayın:
 
+CN kodunuz gümrük beyanınızda yazar; benchmark resmî AB tablosundan gelir:
+
 ```bash
-Rscript hesapla.R --urun celik-bof --miktar 250000 --yil 2030 --kur 48
+Rscript hesapla.R --cn 72081000 --yogunluk 1.95 --miktar 250000 \
+                  --yil 2030 --karbon-fiyati 80 --kur 48
 ```
 
 ```
+CN 72081000 | Flat-rolled products of iron or non-alloy steel...
+Benchmark Column B = 1,370 tCO2e/ton | Kaynak: CBAM-BENCHMARKS-2026-02-06
+
 HESAP
   Gomulu emisyon        250.000 x 1,950          =       487.500 tCO2e
-  Ucretsiz tahsisat     1,288 x 250.000 x 0,515  =      -165.830 tCO2e
+  Ucretsiz tahsisat     1,370 x 250.000 x 0,515  =      -176.388 tCO2e
                         (0,515 = 1 - CBAM faktoru 0,485)
   --------------------------------------------------------------------
-  SERTIFIKA YUKUMLULUGU                          =       321.670 tCO2e
-                                                   (emisyonun %66,0'i)
+  SERTIFIKA YUKUMLULUGU                          =       311.113 tCO2e
+                                                   (emisyonun %63,8'i)
 
-  CBAM MALIYETI         321.670 x 80,00 EUR      =    25.733.600 EUR
-                        x 48,00 TRY/EUR          = 1.235.212.800 TRY
-  Ton basina yuk                                 =        102,93 EUR/ton
-
-BELIRSIZLIK  (50.000 simulasyon, 4 yillik ufuk)
-    %5  (iyimser)     :       6.850.369 EUR
-    Medyan            :      24.248.507 EUR
-    %95 (VaR)         :      85.530.001 EUR
+  CBAM MALIYETI         311.113 x 80,00 EUR      =    24.889.000 EUR
+                        x 48,00 TRY/EUR          = 1.194.672.000 TRY
+  Ton basina yuk                                 =         99,56 EUR/ton
 ```
+
+`--sutun` benchmark sütununu seçer ve **fark büyüktür**:
+
+| Sütun | Kime | CN 72081000 örneği |
+|---|---|---|
+| **B** (varsayılan) | Cevherden üreten entegre tesis | 1,370 tCO2e/ton |
+| **A** | Yalnızca son işlemi yapan tesis | 0,044 tCO2e/ton |
 
 Her ara adım görünür — sonucu kâğıt üzerinde doğrulayabilirsiniz. Kapalı kutu
 araçlardan ayrışan nokta budur.
@@ -63,14 +73,14 @@ Kendi tesis verinizle:
 Rscript hesapla.R --miktar 120000 --yogunluk 1.72 --benchmark 1.288 \
                   --yil 2030 --karbon-fiyati 85 --kur 48
 
-Rscript hesapla.R --urunler       # tanımlı ürünler ve doğrulama durumları
+Rscript hesapla.R --urunler       # hazır ürün tanımları ve CN kodları
 Rscript hesapla.R --yardim        # tüm seçenekler
 ```
 
 ### Paylaşılabilir rapor
 
 ```bash
-Rscript hesapla.R --urun celik-bof --miktar 250000 --yil 2030 --kur 48 \
+Rscript hesapla.R --cn 72081000 --yogunluk 1.95 --miktar 250000 --yil 2030 \
                   --firma "Örnek Çelik A.Ş." --rapor cikti/rapor.html
 ```
 
@@ -89,9 +99,19 @@ kendi tesis veriniz referans değerin yerine geçer.
 Hesabın kullandığı her referans değer **kaynağını taşır** ve çıktıda gösterilir:
 
 ```
-  AB ETS benchmark       :           1,484 tCO2e/ton
-                             Kaynak: CIR-BENCHMARK, Ek satır 12
-                             Geçerlilik: 2021-01-01 - 2025-12-31
+CN 72081000 | Flat-rolled products of iron or non-alloy steel...
+Benchmark Column B = 1,370 tCO2e/ton
+Kaynak: CBAM-BENCHMARKS-2026-02-06, CN 72081000, Column B
+```
+
+**570 CN kodunun benchmark değeri** resmî AB tablosundan gelir ve doğrulanmıştır
+(`data/benchmarks.csv`). Emisyon yoğunlukları ise tesise özgüdür — araç
+bunları ayrı ayrı işaretler:
+
+```
+!! DIKKAT: Bu hesapta DOGRULANMAMIS deger kullanildi.
+   Benchmark  : resmi AB tablosundan, DOGRULANDI.
+   Yogunluk   : sektor tahmini, DOGRULANMADI.
 ```
 
 Resmî AB belgeleri `data-raw/mevzuat/` altında **değiştirilmemiş halde**
@@ -152,7 +172,7 @@ cbam_var(sim, level = 0.95)
 Test ve demo:
 
 ```bash
-Rscript tests/test_engine.R                   # 109 test
+Rscript tests/test_engine.R                   # 131 test
 Rscript analysis/01_demo_turkiye_celik.R      # EAF vs BF-BOF senaryo demosu
 ```
 
@@ -211,7 +231,7 @@ data-raw/
   exiobase/       Büyük MRIO matrisleri (versiyonlanmaz)
   firma/          Firma düzeyi veri (versiyonlanmaz)
 tests/
-  test_engine.R   109 test (base R, harici test paketi gerektirmez)
+  test_engine.R   131 test (base R, harici test paketi gerektirmez)
 LICENSE                        AGPL-3.0 tam metni
 LICENSE-ADDITIONAL-TERMS.md    Atıf ek şartı (AGPL §7(b)) + marka notu
 NOTICE                         Telif, atıf ve veri kaynağı bildirimleri

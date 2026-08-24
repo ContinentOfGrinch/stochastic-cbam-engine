@@ -69,22 +69,74 @@ cbam_products <- function() {
   d
 }
 
-#' Benchmark tablosu
+#' CBAM benchmark tablosu (CN kodu bazinda)
 #'
-#' @return Urun kodu bazinda AB ETS benchmark degerleri ve kaynaklari.
+#' Kaynak: Free Allocation Adjustment Act (CIR (EU) 2025/2620), Ek nokta 5;
+#' Komisyon'un yayimladigi "CBAM Benchmarks" tablosu (6 Subat 2026).
+#'
+#' Iki sutun vardir ve secim hesabi ciddi sekilde degistirir:
+#'   Column A : TEK bir uretim sureci icin benchmark. Yalnizca son islemi
+#'              yapan tesis (ornek: sadece haddeleme) icin gecerlidir.
+#'   Column B : TUM uretim zinciri icin benchmark. Cevherden urune kadar
+#'              kendi ureten entegre tesis icin gecerlidir.
+#'
+#' Ornek (CN 72081000, sicak haddelenmis rulo): Column A = 0,044;
+#' Column B = 1,370. Yanlis sutun 30 kat hata demektir.
+#'
+#' @return CN kodu bazinda benchmark degerleri ve kaynaklari.
 cbam_benchmarks <- function() {
   d <- cbam_read_table("benchmarks")
-  d$benchmark_tco2e_ton <- as.numeric(d$benchmark_tco2e_ton)
+  d$bm_column_a <- as.numeric(d$bm_column_a)
+  d$bm_column_b <- as.numeric(d$bm_column_b)
   d
+}
+
+#' CN koduna gore benchmark degeri
+#'
+#' @param cn_kodu CN kodu (metin ya da sayi; bosluklar temizlenir).
+#' @param sutun \code{"B"} (tum uretim zinciri, varsayilan) ya da
+#'   \code{"A"} (tek uretim sureci).
+#' @return Tek satirlik liste: deger, aciklama, sektor, rota gostergesi, kaynak.
+cbam_benchmark_by_cn <- function(cn_kodu, sutun = "B") {
+  sutun <- toupper(trimws(sutun))
+  if (!sutun %in% c("A", "B")) {
+    stop("sutun 'A' (tek uretim sureci) ya da 'B' (tum zincir) olmali.")
+  }
+  cn <- gsub("[^0-9]", "", as.character(cn_kodu))
+  if (!nzchar(cn)) {
+    stop("cn_kodu bos olamaz.")
+  }
+  bm <- cbam_benchmarks()
+  i <- match(cn, bm$cn_kodu)
+  if (is.na(i)) {
+    stop(sprintf(paste0(
+      "CN kodu '%s' CBAM benchmark tablosunda yok.\n",
+      "  Urununuz CBAM kapsaminda olmayabilir, ya da kodu kontrol edin.\n",
+      "  Tabloda %d CN kodu tanimli (kaynak: %s)."),
+      cn, nrow(bm), bm$kaynak_belge[1]))
+  }
+  b <- bm[i, ]
+  list(
+    cn_kodu   = b$cn_kodu,
+    aciklama  = b$aciklama,
+    sektor    = b$sektor,
+    sutun     = sutun,
+    benchmark = if (sutun == "A") b$bm_column_a else b$bm_column_b,
+    rota      = if (sutun == "A") b$rota_a else b$rota_b,
+    kaynak    = cbam_kaynak_metni(b$kaynak_belge, b$kaynak_yeri),
+    durum     = trimws(b$durum)
+  )
 }
 
 #' Tek bir urunun tum referans bilgisi
 #'
 #' Urun katalogunu ve benchmark tablosunu birlestirir.
 #'
-#' @param urun_kodu Urun kodu (ornek: "alu-birincil").
+#' @param urun_kodu Urun kodu (ornek: "alu-ham").
+#' @param sutun Benchmark sutunu: \code{"B"} tum uretim zinciri (varsayilan),
+#'   \code{"A"} tek uretim sureci.
 #' @return Tek satirlik liste: yogunluk, benchmark, kapsam ve kaynaklar.
-cbam_product <- function(urun_kodu) {
+cbam_product <- function(urun_kodu, sutun = "B") {
   urunler <- cbam_products()
   i <- match(urun_kodu, urunler$urun_kodu)
   if (is.na(i)) {
@@ -92,48 +144,41 @@ cbam_product <- function(urun_kodu) {
                  urun_kodu, paste(urunler$urun_kodu, collapse = ", ")))
   }
   u <- urunler[i, ]
+  b <- cbam_benchmark_by_cn(u$cn_kodu, sutun)
 
-  bm <- cbam_benchmarks()
-  j <- match(urun_kodu, bm$urun_kodu)
-  if (is.na(j)) {
-    stop(sprintf("'%s' icin benchmark tanimli degil (data/benchmarks.csv).",
-                 urun_kodu))
-  }
-  b <- bm[j, ]
-
-  # Iskelet satirlar (henuz deger girilmemis urunler) sessizce NA ile
-  # hesaba girmemeli. Kullanici ya degeri girmeli ya da kendi verisini vermeli.
-  eksik <- c(
-    if (is.na(u$varsayilan_yogunluk)) "varsayilan yogunluk",
-    if (is.na(b$benchmark_tco2e_ton)) "benchmark"
-  )
-  if (length(eksik) > 0) {
+  # Yogunluk girilmemis urunler sessizce NA ile hesaba girmemeli.
+  if (is.na(u$varsayilan_yogunluk)) {
     stop(sprintf(paste0(
-      "'%s' icin %s henuz girilmemis.\n",
-      "  Bu urun referans tablosunda yer tutucu olarak duruyor; degerleri\n",
-      "  resmi belgeden girin (bkz. data-raw/mevzuat/MEVZUAT_DOGRULAMA.md)\n",
-      "  ya da --yogunluk ve --benchmark ile kendi verinizi verin."),
-      urun_kodu, paste(eksik, collapse = " ve ")))
+      "'%s' icin varsayilan emisyon yogunlugu henuz girilmemis.\n",
+      "  Benchmark resmi tablodan geliyor (%s), ama yogunluk yok.\n",
+      "  --yogunluk ile kendi tesis verinizi verin."),
+      urun_kodu, fmt_num(b$benchmark, 3)))
   }
 
   list(
     urun_kodu           = u$urun_kodu,
     urun_adi            = u$urun_adi,
     sektor              = u$sektor,
-    cn_kodlari          = u$cn_kodlari,
+    cn_kodu             = b$cn_kodu,
+    cn_aciklama         = b$aciklama,
+    benchmark_sutun     = b$sutun,
     dolayli_kapsamda    = tolower(trimws(u$dolayli_kapsamda)) %in%
                             c("evet", "yes", "true"),
     varsayilan_yogunluk = u$varsayilan_yogunluk,
     varsayilan_sacilim  = u$varsayilan_sacilim,
-    benchmark           = b$benchmark_tco2e_ton,
+    benchmark           = b$benchmark,
     yogunluk_kaynak     = cbam_kaynak_metni(u$kaynak_belge, u$kaynak_yeri),
-    benchmark_kaynak    = cbam_kaynak_metni(b$kaynak_belge, b$kaynak_yeri),
-    benchmark_gecerlilik = cbam_gecerlilik_metni(b$gecerli_baslangic,
-                                                 b$gecerli_bitis),
+    benchmark_kaynak    = sprintf("%s, CN %s, Column %s",
+                                  b$kaynak, b$cn_kodu, b$sutun),
+    benchmark_gecerlilik = "",
+    # Benchmark artik resmi ve dogrulanmis; yogunluk hala sektor tahmini.
+    # Bu yuzden satir bazinda degil, alan bazinda durum tutuluyor.
+    benchmark_dogrulandi = identical(b$durum, "dogrulandi"),
+    yogunluk_dogrulandi  = identical(trimws(u$durum), "dogrulandi"),
     dogrulandi          = identical(trimws(u$durum), "dogrulandi") &&
-                            identical(trimws(b$durum), "dogrulandi"),
+                            identical(b$durum, "dogrulandi"),
     urun_durum          = trimws(u$durum),
-    benchmark_durum     = trimws(b$durum),
+    benchmark_durum     = b$durum,
     not                 = u$not,
     veri_surumu         = cbam_data_version()
   )
@@ -177,8 +222,19 @@ cbam_gecerlilik_metni <- function(baslangic, bitis) {
 #' @return Yazdirilacak uyari satirlari; veri dogrulanmissa NULL.
 cbam_dogrulama_uyarisi <- function(p) {
   if (isTRUE(p$dogrulandi)) return(NULL)
+  satir <- "!! DIKKAT: Bu hesapta DOGRULANMAMIS deger kullanildi."
+  if (isTRUE(p$benchmark_dogrulandi) && !isTRUE(p$yogunluk_dogrulandi)) {
+    # En sik durum: benchmark resmi, yogunluk hala sektor tahmini.
+    return(c(
+      satir,
+      "   Benchmark  : resmi AB tablosundan, DOGRULANDI.",
+      "   Yogunluk   : sektor tahmini, DOGRULANMADI.",
+      "   Kendi tesis verinizi --yogunluk ile verin; sonuc o zaman",
+      "   tamamen resmi kaynaklara dayanir."
+    ))
+  }
   c(
-    "!! DIKKAT: Bu hesapta DOGRULANMAMIS referans degerleri kullanildi.",
+    satir,
     sprintf("   Urun kaydi     : %s", p$urun_durum),
     sprintf("   Benchmark kaydi: %s", p$benchmark_durum),
     "   Degerler sektor tahminidir, resmi AB degeri DEGILDIR.",
