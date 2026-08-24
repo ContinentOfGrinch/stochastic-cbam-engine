@@ -237,6 +237,29 @@ expect("provenans alanlari inputs icinde kayitli",
          all(c("seed", "horizon", "base_year", "theta_sdlog") %in%
                names(s$inputs)) })
 
+cat("\n== bagimlilik disiplini ==\n")
+# "Sifir bagimlilik" bir iddia degil, korunmasi gereken bir kural olmali.
+# Motor ve sunum katmani yalnizca R'in temel paketlerini kullanabilir.
+kaynak_dosyalar <- c(list.files("R", pattern = "\\.R$", full.names = TRUE),
+                     "hesapla.R", "load_all.R")
+kaynak_metin <- unlist(lapply(kaynak_dosyalar, readLines, warn = FALSE))
+kod_satirlari <- kaynak_metin[!grepl("^\\s*#", kaynak_metin)]
+
+expect("motor library()/require() cagirmiyor",
+       !any(grepl("\\b(library|require|requireNamespace)\\s*\\(", kod_satirlari)))
+expect("yalnizca temel paket ad alanlari kullaniliyor",
+       { ns <- regmatches(kod_satirlari,
+                          gregexpr("[A-Za-z][A-Za-z0-9.]*(?=::)", kod_satirlari,
+                                   perl = TRUE))
+         ns <- unique(unlist(ns))
+         length(ns) == 0 || all(ns %in% c("stats", "utils", "graphics",
+                                          "grDevices", "methods", "base",
+                                          "tools"))
+       })
+expect("motor katmani ag erisimi yapmiyor",
+       !any(grepl("url\\(|download\\.file|curl|httr|readLines\\s*\\(\\s*\"http",
+                  kod_satirlari)))
+
 cat("\n== reference.R (Katman 0 veri butunlugu) ==\n")
 urunler <- cbam_products()
 benchmarks <- cbam_benchmarks()

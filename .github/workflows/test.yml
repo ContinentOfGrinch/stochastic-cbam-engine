@@ -1,0 +1,73 @@
+name: testler
+
+# Projenin iddiasi "tekrarlanabilirlik". Bu is akisi o iddiayi
+# dogrulanabilir kilar: testlerin gectigini benim soylemem degil,
+# GitHub'in temiz bir makinede kosarak gostermesi.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: R ${{ matrix.r }} · ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        r: ['release']
+        include:
+          # Alt sinir: README "R >= 4.0" diyor. Bu satir o vaadi test eder.
+          - os: ubuntu-latest
+            r: '4.2'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: ${{ matrix.r }}
+          use-public-rspm: true
+
+      # Bilerek hicbir paket kurmuyoruz. Testler temiz bir R kurulumunda
+      # gecmezse "sifir bagimlilik" iddiasi yanlis demektir.
+      - name: R surumu ve yuklu paketler
+        run: |
+          Rscript -e 'cat(R.version.string, "\n")'
+          Rscript -e 'ip <- rownames(installed.packages(priority = "NA")); cat("temel disi paket:", if (length(ip)) paste(ip, collapse = ", ") else "yok", "\n")'
+        shell: bash
+
+      - name: Motor testleri
+        run: Rscript tests/test_engine.R
+        shell: bash
+
+      - name: Hesap makinesi calisiyor mu
+        run: |
+          Rscript hesapla.R --urunler
+          Rscript hesapla.R --cn 72081000 --yogunluk 1.95 --miktar 250000 --yil 2030 --kur 48 --kesin
+        shell: bash
+
+      - name: Rapor uretiliyor ve kendi kendine yetiyor mu
+        run: |
+          Rscript hesapla.R --cn 72081000 --yogunluk 1.95 --miktar 250000 \
+            --yil 2030 --kur 48 --simulasyon 2000 --rapor cikti/ci.html
+          Rscript -e '
+            h <- paste(readLines("cikti/ci.html", warn = FALSE), collapse = "\n")
+            if (grepl("src=|href=\"http|@import", h)) {
+              stop("Rapor disaridan kaynak yukluyor - tek dosya olma sarti ihlal edildi.")
+            }
+            if (!grepl("0009-0007-4824-752X", h, fixed = TRUE)) {
+              stop("Rapor kunyeyi tasimiyor - AGPL 7(b) atif sarti ihlal edildi.")
+            }
+            cat("rapor tek dosya ve kunyeli\n")'
+        shell: bash
+
+      - name: Demo calisiyor mu
+        run: Rscript analysis/01_demo_turkiye_celik.R > /dev/null
+        shell: bash
