@@ -8,9 +8,10 @@
 
 #  CBAM Yukumluluk Modulu
 #
-#  Yasal cerceve: Regulation (EU) 2023/956 (CBAM Tuzugu) ve tadilleri.
+#  Yasal cerceve: Regulation (EU) 2023/956 (CBAM Tuzugu) ve tadilleri,
+#  Free Allocation Adjustment Act (CIR (EU) 2025/2620).
 #  Bu modul E_CBAM (yasal olarak vergilendirilen emisyon) hesabini yapar;
-#  tedarik zinciri genelindeki E_MRIO icin bkz. R/mrio.R.
+#  tedarik zinciri genelindeki E_MRIO arastirma ekindedir: research/mrio.R.
 
 #' Mevzuattaki resmi CBAM faktoru (ucretsiz tahsisat payi)
 #'

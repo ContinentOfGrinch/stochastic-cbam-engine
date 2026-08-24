@@ -16,7 +16,10 @@
 Araştırma eki **isteğe bağlıdır** — hesap makinesi ona hiç dokunmaz, silinse
 aynen çalışır. Çoğu kullanıcının ihtiyacı yalnızca ilk satırdır.
 
-Bu proje, AB Sınırda Karbon Düzenleme Mekanizması'nın (SKDM) ihracatçılar üzerindeki etkisini sektörel ortalamalara sıkışmadan, stokastik belirsizlikler ve mikro düzey firma verileriyle hesaplayan açık kaynaklı bir ekonometrik laboratuvardır.
+Araç, AB Sınırda Karbon Düzenleme Mekanizması'nın (SKDM) bir ihracatçıya
+maliyetini hesaplar. Sektörel ortalamaya sıkışmak yerine firmanın kendi
+emisyon yoğunluğuyla çalışır ve tek bir tahmin yerine karbon fiyatı ile kur
+belirsizliğini de içeren bir dağılım verir.
 
 ## Proje Vizyonu ve Kapsamı
 
@@ -73,7 +76,7 @@ araçlardan ayrışan nokta budur.
 Kendi tesis verinizle:
 
 ```bash
-Rscript hesapla.R --miktar 120000 --yogunluk 1.72 --benchmark 1.288 \
+Rscript hesapla.R --cn 72081000 --yogunluk 1.72 --miktar 120000 \
                   --yil 2030 --karbon-fiyati 85 --kur 48
 
 Rscript hesapla.R --urunler       # hazır ürün tanımları ve CN kodları
@@ -144,7 +147,7 @@ source("load_all.R")
 hesap <- cbam_estimate(
   quantity     = 250000,   # ton/yıl AB'ye ihracat
   ei_direct    = 1.95,     # tCO2e/ton (doğrudan emisyon)
-  benchmark    = 1.288,    # AB ETS sıcak metal benchmark'ı
+  benchmark    = 1.370,    # CN 72081000, Column B (resmî tablodan)
   year         = 2030,
   carbon_price = 80,       # EUR/tCO2e
   fx_rate      = 48        # TRY/EUR
@@ -160,7 +163,7 @@ sim <- run_cbam_mc(
   quantity       = 250000,   # ton/yıl AB'ye ihracat
   ei_sector      = 1.95,     # tCO2e/ton (doğrudan emisyon)
   theta_sdlog    = 0.20,     # firma teknoloji heterojenliği
-  benchmark      = 1.288,    # AB ETS sıcak metal benchmark'ı
+  benchmark      = 1.370,    # CN 72081000, Column B (resmî tablodan)
   year           = 2030,
   carbon_price_0 = 80,       # EUR/tCO2e
   fx_0           = 48,       # TRY/EUR
@@ -194,10 +197,21 @@ $$ EI_f = EI_s \times \theta_f $$
 İthalatçı, AB üreticisinin hâlâ aldığı ücretsiz tahsisat kadar muaftır; bu muafiyet CBAM faktörü arttıkça erir:
 
 ```
-sertifika = gömülü_emisyon − benchmark × miktar × (1 − cbam_factor) − menşede_ödenen
+sertifika = gömülü_emisyon − benchmark × miktar × CBAM_faktörü × CSCF − menşede_ödenen
 ```
 
-CBAM faktörü Regulation (EU) 2023/956 takvimini izler: 2026'da %2,5 → 2034'te %100.
+Kaynak: Free Allocation Adjustment Act (CIR (EU) 2025/2620), Ek nokta 2 ve 5;
+Rehber No. 4, Denklem (1)–(2).
+
+> **İsim karışıklığına dikkat.** Mevzuatın *"CBAM factor"* dediği değer,
+> ücretsiz tahsisatın **hâlâ geçerli olan payıdır** — 2026'da %97,5, 2034'te %0.
+> Kodda `cbam_phase_in_factor()` bunun tümleyenini, yani **yükümlülük payını**
+> döndürür (2026'da %2,5, 2034'te %100). Tek doğruluk kaynağı
+> `cbam_factor_official()`; diğeri ondan türetilir.
+>
+> `CSCF` (cross-sectoral correction factor, AB ETS Md. 10a(5)) 2026–2030 için
+> 1,0'dır; formülde yer alması, değer değiştiğinde motorun sessizce yanlış
+> hesap yapmaması içindir.
 
 > **Metodolojik not.** Ücretsiz tahsisat *benchmark üzerinden* düşüldüğü için, benchmark'ın belirgin şekilde üstünde emisyon yoğunluğuna sahip bir firma 2026'da bile ciddi yükümlülük altına girer. "2026'da yalnızca %2,5 ödenir" ifadesi yalnızca benchmark'taki ortalama üretici için geçerlidir. Bu, modelin en politika-ilgili çıktılarından biridir.
 
