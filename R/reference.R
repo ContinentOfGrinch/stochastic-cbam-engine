@@ -120,12 +120,38 @@ cbam_benchmark_by_cn <- function(cn_kodu, sutun = "B") {
     cn_kodu   = b$cn_kodu,
     aciklama  = b$aciklama,
     sektor    = b$sektor,
+    birim     = cbam_fonksiyonel_birim(b$sektor),
     sutun     = sutun,
     benchmark = if (sutun == "A") b$bm_column_a else b$bm_column_b,
     rota      = if (sutun == "A") b$rota_a else b$rota_b,
     kaynak    = cbam_kaynak_metni(b$kaynak_belge, b$kaynak_yeri),
     durum     = trimws(b$durum)
   )
+}
+
+#' Sektorun fonksiyonel birimi
+#'
+#' Her CBAM malinda miktar "ton urun" olarak olculmez. Bu ayrimi kacirmak
+#' sessizce yanlis bir sonuc uretir - hesap calisir, sayi makul gorunur,
+#' ama tamamen baska bir seyi olcer.
+#'
+#' Kaynak: Rehber No. 3, s.20 - "Where the functional unit is not the tonne
+#' of product, i.e. in cement products and fertilisers products, the specific
+#' embedded emissions must be reported as tonne CO2e per functional unit
+#' (tonnes of clinker and kg of nitrogen respectively)."
+#'
+#' @param sektor Benchmark tablosundaki sektor adi.
+#' @return Liste: \code{birim} (metin) ve \code{standart} (mantiksal; birim
+#'   ton urun ise TRUE).
+cbam_fonksiyonel_birim <- function(sektor) {
+  s <- tolower(trimws(as.character(sektor)))
+  if (identical(s, "cement")) {
+    return(list(birim = "ton klinker", standart = FALSE))
+  }
+  if (identical(s, "fertilisers")) {
+    return(list(birim = "kg azot", standart = FALSE))
+  }
+  list(birim = "ton urun", standart = TRUE)
 }
 
 #' Tek bir urunun tum referans bilgisi

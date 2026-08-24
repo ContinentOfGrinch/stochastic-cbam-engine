@@ -201,10 +201,13 @@ hata_ver <- function(e) {
   quit(status = 1)
 }
 
+birim <- NULL
+
 if (!is.null(opt[["cn"]])) {
   # CN kodu yolu: benchmark resmi tablodan gelir, yogunlugu kullanici verir.
   bm <- tryCatch(cbam_benchmark_by_cn(opt[["cn"]], sutun), error = hata_ver)
   if (is.null(benchmark)) benchmark <- bm$benchmark
+  birim <- bm$birim
   if (is.null(yogunluk)) {
     cat(sprintf("HATA: --cn ile --yogunluk de vermelisiniz.\n"))
     cat(sprintf("      CN %s (%s)\n", bm$cn_kodu,
@@ -231,6 +234,8 @@ if (!is.null(opt[["cn"]])) {
   if (is.null(yogunluk))  yogunluk  <- referans$varsayilan_yogunluk
   if (is.null(benchmark)) benchmark <- referans$benchmark
   if (is.null(sacilim))   sacilim   <- referans$varsayilan_sacilim
+  birim <- tryCatch(cbam_benchmark_by_cn(referans$cn_kodu, sutun)$birim,
+                    error = function(e) NULL)
 }
 
 if (is.null(yogunluk) || is.null(benchmark)) {
@@ -260,7 +265,8 @@ sonuc <- tryCatch(
     base_year          = sayi("baz-yil", 2026),
     n_sims             = sayi("simulasyon", 50000),
     seed               = sayi("tohum", 2026),
-    reference          = referans
+    reference          = referans,
+    functional_unit    = birim
   ),
   error = function(e) {
     cat(sprintf("HATA: %s\n", conditionMessage(e)))

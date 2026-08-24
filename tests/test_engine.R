@@ -350,6 +350,31 @@ expect_error("kapsam disi CN kodu net hata verir",
 expect_error("bos CN kodu reddedilir", cbam_benchmark_by_cn(""))
 expect_error("gecersiz sutun reddedilir",
              cbam_benchmark_by_cn("72081000", "C"))
+
+# --- Fonksiyonel birim: sessizce yanlis sonucu onleyen kontrol ------------
+# Rehber No. 3 s.20: cimentoda ton klinker, gubrede kg azot.
+expect("celikte birim ton urun",
+       isTRUE(cbam_benchmark_by_cn("72081000")$birim$standart))
+expect("cimentoda birim ton klinker",
+       { b <- cbam_benchmark_by_cn("25231000")$birim
+         !b$standart && b$birim == "ton klinker" })
+expect("aluminyumda birim ton urun",
+       isTRUE(cbam_benchmark_by_cn("76011090")$birim$standart))
+expect("gubre sektorunde birim kg azot",
+       { g <- benchmarks$cn_kodu[benchmarks$sektor == "Fertilisers"][1]
+         b <- cbam_benchmark_by_cn(g)$birim
+         !b$standart && b$birim == "kg azot" })
+expect("standart disi birim hesapta uyari uretir",
+       { e <- cbam_estimate(100000, 0.9, 0.666, year = 2030,
+                            uncertainty = FALSE,
+                            functional_unit = cbam_fonksiyonel_birim("Cement"))
+         cikti <- capture.output(print(e))
+         any(grepl("BIRIM UYARISI", cikti, fixed = TRUE)) })
+expect("standart birimde uyari cikmaz",
+       { e <- cbam_estimate(250000, 1.95, 1.37, year = 2030,
+                            uncertainty = FALSE)
+         cikti <- capture.output(print(e))
+         !any(grepl("BIRIM UYARISI", cikti, fixed = TRUE)) })
 expect("durum degerleri gecerli",
        all(trimws(c(urunler$durum, benchmarks$durum)) %in%
              c("dogrulandi", "dogrulanmadi", "kismen")))
