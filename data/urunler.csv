@@ -3,10 +3,11 @@ celik-bof,Entegre tesis (BF-BOF),demir-celik,,hayir,1.950,0.20,,,dogrulanmadi,Se
 celik-eaf,Elektrik ark ocagi (EAF),demir-celik,,hayir,0.250,0.30,,,dogrulanmadi,Sektor ortalamasi tahmini - resmi deger degil
 alu-birincil,Birincil aluminyum (elektroliz),aluminyum,,hayir,1.700,0.15,,,dogrulanmadi,D6 dolayli kapsam DOGRULANMALI - 136 vs 608 EUR/ton farki
 alu-ikincil,Ikincil aluminyum (hurda/remelt),aluminyum,,hayir,0.350,0.25,,,dogrulanmadi,D6 dolayli kapsam DOGRULANMALI
-cimento-klinker,Cimento klinkeri,cimento,,,,,,,dogrulanmadi,Deger girilmedi - Ek I ve benchmark tuzugunden alinacak
-cimento,Cimento,cimento,,,,,,,dogrulanmadi,Deger girilmedi - Ek I ve benchmark tuzugunden alinacak
-gubre-amonyak,Amonyak,gubre,,,,,,,dogrulanmadi,Deger girilmedi - dolayli kapsam ozellikle kontrol edilmeli
-gubre-nitrik-asit,Nitrik asit,gubre,,,,,,,dogrulanmadi,Deger girilmedi - N2O emisyonu var mi kontrol et
-gubre-ure,Ure,gubre,,,,,,,dogrulanmadi,Deger girilmedi
-gubre-karisik,Karisik gubre,gubre,,,,,,,dogrulanmadi,Deger girilmedi
-hidrojen,Hidrojen,hidrojen,,,,,,,dogrulanmadi,Deger girilmedi - standart kalibi oturuyor mu kontrol et
+cimento-klinker,Cimento klinkeri,cimento,,evet,,,GUIDANCE-4,s.19-20 (dolayli kapsam),dogrulanmadi,Birim TON KLINKER - ton urun degil. Deger girilmedi
+cimento,Cimento,cimento,,evet,,,GUIDANCE-4,s.19-20 (dolayli kapsam),dogrulanmadi,Birim TON KLINKER - ton urun degil. Deger girilmedi
+gubre-amonyak,Amonyak,gubre,,evet,,,GUIDANCE-4,s.19-20 (dolayli kapsam),dogrulanmadi,Birim KG AZOT - ton urun degil. N2O da kapsamda. Deger girilmedi
+gubre-nitrik-asit,Nitrik asit,gubre,,evet,,,GUIDANCE-4,s.19-20 (dolayli kapsam),dogrulanmadi,Birim KG AZOT. N2O da kapsamda. Deger girilmedi
+gubre-ure,Ure,gubre,,evet,,,GUIDANCE-4,s.19-20 (dolayli kapsam),dogrulanmadi,Birim KG AZOT. Deger girilmedi
+gubre-karisik,Karisik gubre,gubre,,evet,,,GUIDANCE-4,s.19-20 (dolayli kapsam),dogrulanmadi,Birim KG AZOT. Deger girilmedi
+hidrojen,Hidrojen,hidrojen,,hayir,,,GUIDANCE-4,s.19-20 (Ek II'de),dogrulanmadi,Deger girilmedi
+demir-sinter,Aglomere demir cevheri (sinter),demir-celik,,evet,,,GUIDANCE-4,s.19-20 (Ek II disinda),dogrulanmadi,Ek II disinda - dolayli emisyon KAPSAMDA. Deger girilmedi

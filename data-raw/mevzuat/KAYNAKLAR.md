@@ -39,30 +39,46 @@ CELEX numarasıyla doğrudan erişim:
 > Aşağıdaki CELEX numaraları başlangıç noktasıdır; indirmeden önce EUR-Lex'te
 > arayıp **yürürlükteki en güncel sürüm olduğunu teyit et.**
 
-| # | Belge kimliği | CELEX (başlangıç) | Ne için gerekli | Dosya | Tarih | SHA256 | Durum |
-|---|---|---|---|---|---|---|---|
-| 1 | `REG-2023-956` | `32023R0956` → konsolide `02023R0956` | **CBAM Tüzüğü.** Ek I (kapsamdaki ürünler + CN kodları + dolaylı emisyon kapsamı), phase-in takvimi, sertifika hesabı, menşede ödenen karbon, de minimis | — | — | — | ⬜ |
-| 2 | `CIR-BENCHMARK` | AB ETS ücretsiz tahsisat benchmark değerleri — **2026–2030 dönemi** | Ürün bazında benchmark (D7) | — | — | — | ⬜ |
-| 3 | `CIR-2023-1773` | `32023R1773` | Geçiş dönemi raporlama tüzüğü + ekleri; Komisyon'un varsayılan emisyon değerleri | — | — | — | ⬜ |
-| 4 | `DIR-2003-87` | `02003L0087` (konsolide) | AB ETS Direktifi — benchmark tanımı ve ücretsiz tahsisatın kademeli kaldırılması | — | — | — | ⬜ |
-| 5 | `IR-KESIN-DONEM` | 2025–2026 uygulama tüzükleri | Kesin dönem (2026+) hesap kuralları ve varsayılan değerler | — | — | — | ⬜ |
+## İndirilmiş belgeler ✅
 
-**2 ve 5 numara için CELEX veremiyorum** — benchmark tüzükleri dönem dönem
-yenileniyor ve kesin dönem uygulama tüzükleri bu projenin bilgi kesitinden
-sonra yayımlanmış olabilir. EUR-Lex'te arayarak yürürlüktekini bul.
+| Belge kimliği | Dosya | Tarih | SHA256 |
+|---|---|---|---|
+| `GUIDANCE-3` | `Guidance-3-CBAM-methods-calculation-embedded-emissions.pdf` | 2026-08-23 | `162ED275717671F05B88355A9B161726E7A1396F6CE1FC8F72A2F287D204A0D6` |
+| `GUIDANCE-4` | `Guidance-4-CBAM-free-allocation-adjustment.pdf` | 2026-08-23 | `6854641617E77C18F7C752283E56871B180CB8790806CFDE9CBD6EF6F62F8698` |
 
-### Öncelik sırası
+Avrupa Komisyonu, DG TAXUD, **14 Ağustos 2026** — kesin dönem için ilk yayın.
+Kaynak: <https://taxation-customs.ec.europa.eu/carbon-border-adjustment-mechanism/cbam-legislation-and-guidance_en>
 
-**1 numara her şeyden önce gelir** — tek başına D1, D2, D3, D4, D5, D6, D8
-maddelerinin çoğunu kapatır.
+> Bu rehberler **hukuken bağlayıcı değildir**; açıklayıcı niteliktedir. Resmî
+> metin çelişki halinde üstündür. Yine de D1, D2, D5, D6 maddelerini
+> kapatmaya yetti — her biri altındaki yasal işleme atıf vererek.
 
-İçindeki en kritik bilgi: *hangi ürünlerde dolaylı (elektrik) emisyonlar CBAM
-yükümlülüğüne giriyor?* (bkz. `MEVZUAT_DOGRULAMA.md` → **D6**)
+## İndirilecek belgeler ⬜
 
-Bunun pratik karşılığı, 15.000 tonluk bir alüminyum ihracatçısı için 2034'te
-**136 EUR/ton ile 608 EUR/ton arasındaki fark** — yılda yaklaşık 7 milyon EUR.
-`data/urunler.csv` içindeki `dolayli_kapsamda` sütunu şu an doğrulanmamış bir
-varsayım taşıyor ve bu belge gelene kadar öyle kalacak.
+| # | Belge kimliği | Erişim | Ne için gerekli | Durum |
+|---|---|---|---|---|
+| 1 | `REG-2023-956` | `data.europa.eu/eli/reg/2023/956/2025-10-20` (konsolide) | Ek I (CN kodları, D8), Ek II (dolaylı kapsam listesi), Md. 9 (menşede ödenen, D3), de minimis (D4) | ⬜ |
+| 2 | `CIR-2025-2620` | `data.europa.eu/eli/reg_impl/2025/2620/oj` | **Free Allocation Adjustment Act.** Ek nokta 5 Column A = benchmark değerleri (D7) | ⬜ |
+| 3 | `CBAM-BENCHMARKS-XLSX` | Komisyon sitesi → `CBAM Benchmarks_20260206.xlsx` | Benchmark tablosunun hazır hâli (D7) — en pratik yol | ⬜ |
+| 4 | `CIR-2025-2547` | `data.europa.eu/eli/reg_impl/2025/2547/oj` | **Methodology Act.** Md. 3(2) dolaylı emisyon kuralı, fonksiyonel birimler | ⬜ |
+| 5 | `CIR-2025-2621` | `data.europa.eu/eli/reg_impl/2025/2621/oj` | **Default Values Act.** Varsayılan emisyon yoğunlukları | ⬜ |
+
+**Yeni öncelik: 3 numara.** Komisyon benchmark tablosunu hazır XLSX olarak
+yayımlamış — D7'yi kapatmanın en kısa yolu bu. İndirip `data/benchmarks.csv`'ye
+aktarılacak. Ardından 1 numara (D3, D4, D8 için).
+
+## Kesin dönem yasal işlemleri (tam liste)
+
+Rehber No. 4 s.5'ten:
+
+| Kısa ad | İşlem | Dayanak |
+|---|---|---|
+| CBAM Regulation | (EU) 2023/956 + (EU) 2025/2083 tadili | — |
+| Methodology Act | CIR (EU) 2025/2547 | Md. 7(7) |
+| Default Values Act | CIR (EU) 2025/2621 | Md. 7(7) |
+| Verification Principles Act | CIR (EU) 2025/2546 | Md. 8(3) |
+| Accreditation & Verification | CDR (EU) 2025/2551 | Md. 18(3) |
+| **Free Allocation Adjustment Act** | **CIR (EU) 2025/2620** | **Md. 31(2)** |
 
 ### Dil
 

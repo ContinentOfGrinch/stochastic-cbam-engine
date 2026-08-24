@@ -56,16 +56,46 @@ cat("\n== cbam.R ==\n")
 expect("2025 oncesi mali yukumluluk yok",
        cbam_phase_in_factor(2025) == 0)
 expect("2026 faktoru %2,5",
-       cbam_phase_in_factor(2026) == 0.025)
+       abs(cbam_phase_in_factor(2026) - 0.025) < 1e-12)
 expect("2030 faktoru %48,5",
        cbam_phase_in_factor(2030) == 0.485)
 expect("2034 ve sonrasi tam yukumluluk",
        cbam_phase_in_factor(2034) == 1 && cbam_phase_in_factor(2040) == 1)
+
+# --- D1: resmi CBAM faktoru tablosu -----------------------------------------
+# Kaynak: Free Allocation Adjustment Act (CIR (EU) 2025/2620),
+#         Guidance No. 4 Tablo 2-1.
+# Mevzuatin "CBAM factor" dedigi deger UCRETSIZ TAHSISAT payidir; bizim
+# yukumluluk payimiz onun tumleyenidir. 2031-2033 degerleri onceden yanlisti.
+expect("resmi CBAM faktoru tablosu mevzuatla ayni",
+       all(abs(cbam_factor_official(2026:2034) -
+                 c(0.975, 0.950, 0.900, 0.775, 0.515,
+                   0.390, 0.265, 0.140, 0.000)) < 1e-12))
+expect("yukumluluk payi resmi faktorun tumleyeni",
+       all(abs(cbam_phase_in_factor(2026:2034) +
+                 cbam_factor_official(2026:2034) - 1) < 1e-12))
+expect("2031-2033 duzeltilmis degerler",
+       all(abs(cbam_phase_in_factor(2031:2033) -
+                 c(0.610, 0.735, 0.860)) < 1e-12))
+expect("2026 oncesi tahsisat tam, yukumluluk sifir",
+       cbam_factor_official(2025) == 1 && cbam_phase_in_factor(2025) == 0)
+expect_error("resmi faktor gecersiz yili reddeder",
+             cbam_factor_official(2030.5))
+
+# --- CSCF ---
+expect("cscf su an tum yillarda 1",
+       all(cbam_cscf(2026:2034) == 1))
+expect("cscf ucretsiz tahsisati olcekler",
+       { tam <- certificates_due(1900, 1000, 1.288, 0.025, cscf = 1)
+         yari <- certificates_due(1900, 1000, 1.288, 0.025, cscf = 0.5)
+         yari > tam })
+expect_error("negatif cscf reddedilir",
+             certificates_due(1900, 1000, 1.288, 0.5, cscf = -1))
 expect("faktor vektorlestirilmis",
        length(cbam_phase_in_factor(c(2026, 2030, 2034))) == 3)
 expect("vektor sonuclari tek tek cagriyla ayni",
-       all(cbam_phase_in_factor(c(2025, 2028, 2031, 2040)) ==
-             c(0, 0.100, 0.615, 1)))
+       all(abs(cbam_phase_in_factor(c(2025, 2028, 2031, 2040)) -
+                 c(0, 0.100, 0.610, 1)) < 1e-12))
 # K3: gecersiz yil sessizce NA uretiyordu; hata tum hesaba yayiliyordu.
 expect_error("tam sayi olmayan yil reddedilir", cbam_phase_in_factor(2026.5))
 expect_error("NA yil reddedilir", cbam_phase_in_factor(NA_real_))

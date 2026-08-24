@@ -1,168 +1,206 @@
 # Mevzuat Doğrulama Kontrol Listesi
 
-Kod şu an **8 iddiada** bulunuyor. Her biri resmî metinden doğrulanmalı.
-Bir iddia doğrulandığında kutuyu işaretle, kaynak referansını yaz ve
-ilgili kod dosyasına yorum olarak ekle.
+Kodun mevzuata dair **8 iddiası** ve her birinin doğrulama durumu.
 
-> Bu liste projenin "mevzuata uygunluk" güvencesidir. Doğrulanmamış bir
-> iddia, doğrulanmış gibi görünen bir iddiadan daha az tehlikelidir —
-> o yüzden hiçbirini varsayılan olarak işaretli bırakma.
+**Son doğrulama: 2026-08-23** · Kaynak: bu klasördeki Rehber No. 3 ve No. 4
+(Avrupa Komisyonu, 14 Ağustos 2026 — kesin dönem için ilk yayın).
 
----
-
-## D1 — Phase-in (CBAM faktörü) takvimi ⬜
-
-**Kod:** [`R/cbam.R`](../../R/cbam.R) → `cbam_phase_in_factor()`
-
-Kodun iddia ettiği takvim:
-
-| Yıl | Faktör | Yıl | Faktör |
-|---|---|---|---|
-| 2026 | %2,5 | 2031 | %61,5 |
-| 2027 | %5,0 | 2032 | %74,5 |
-| 2028 | %10,0 | 2033 | %86,5 |
-| 2029 | %22,5 | 2034 | %100 |
-| 2030 | %48,5 | | |
-
-**Doğrula:** Bu değerler ücretsiz tahsisatın kademeli kaldırılma takvimidir.
-Kaynak muhtemelen CBAM Tüzüğü'nün ilgili maddesi ve/veya AB ETS Direktifi'nin
-ücretsiz tahsisat maddesi. Omnibus tadili takvimi değiştirdi mi?
-
-**Kaynak:** _________________
+| # | İddia | Durum |
+|---|---|---|
+| D1 | Phase-in takvimi | ✅ **DOĞRULANDI — hata bulundu ve düzeltildi** |
+| D2 | Sertifika hesabı formülü | ✅ **DOĞRULANDI — eksik terim eklendi** |
+| D3 | Menşede ödenen karbon düşümü | ⬜ Açık |
+| D4 | De minimis eşiği | ⬜ Açık |
+| D5 | 2026 öncesi mali yükümlülük yok | ✅ Doğrulandı |
+| D6 | Dolaylı emisyon kapsamı | ✅ **DOĞRULANDI** |
+| D7 | Benchmark değerleri | ⬜ Açık — kaynak belirlendi |
+| D8 | CN kodları | ⬜ Açık |
 
 ---
 
-## D2 — Sertifika hesabı formülü ⬜ ⚠️ EN KRİTİK
+## ✅ D1 — Phase-in takvimi — **HATA BULUNDU, DÜZELTİLDİ**
 
-**Kod:** [`R/cbam.R`](../../R/cbam.R) → `certificates_due()`
+**Kaynak:** Rehber No. 4, Tablo 2-1; Free Allocation Adjustment Act
+(CIR (EU) 2025/2620); EU ETS Direktifi Madde 10a(1a).
 
-Kodun iddia ettiği formül:
+**Bulgu — isim karışıklığı:** Mevzuatın *"CBAM factor"* dediği değer, ücretsiz
+tahsisatın **hâlâ geçerli olan payıdır** — yükümlülük payı değil. Kodumuz
+yükümlülük payıyla çalışıyordu, yani resmî değerin tümleyeniyle.
+
+Resmî tablo (Tablo 2-1):
+
+| Yıl | Resmî CBAM factor | Yükümlülük payı |
+|---|---|---|
+| 2025 | 100,0% | 0% |
+| 2026 | 97,5% | 2,5% |
+| 2027 | 95,0% | 5,0% |
+| 2028 | 90,0% | 10,0% |
+| 2029 | 77,5% | 22,5% |
+| 2030 | 51,5% | 48,5% |
+| **2031** | **39,0%** | **61,0%** |
+| **2032** | **26,5%** | **73,5%** |
+| **2033** | **14,0%** | **86,0%** |
+| 2034 | 0,0% | 100% |
+
+**Hata:** 2031, 2032 ve 2033 için kodda sırasıyla 61,5% / 74,5% / 86,5%
+vardı. Doğrusu 61,0% / 73,5% / 86,0%. 2032'de 1 puanlık sapma, 250.000 tonluk
+bir BF-BOF ihracatçısı için yılda yaklaşık 250.000 EUR'luk fark demekti.
+
+**Düzeltme:** `cbam_factor_official()` resmî tabloyu aynen tutuyor;
+`cbam_phase_in_factor()` artık `1 - cbam_factor_official()` olarak
+türetiliyor. Tek doğruluk kaynağı var, iki tablonun birbirinden kayması
+imkânsız. Test altında.
+
+---
+
+## ✅ D2 — Sertifika hesabı formülü — **DOĞRULANDI, EKSİK TERİM EKLENDİ**
+
+**Kaynak:** Rehber No. 4, bölüm 2.2.1, Denklem (1) ve (2); Free Allocation
+Adjustment Act Ek, nokta 2 ve 5.
+
+Resmî formül:
 
 ```
-sertifika = gömülü_emisyon − benchmark × miktar × (1 − cbam_faktörü) − menşede_ödenen
+Denklem (2):  SFA_Proc(g,y) = CBAM_y × CSCF_y × BM*_g
+Denklem (1):  FAA_g        = SEFA_(g,y) × M_g
+
+CBAM yükümlülüğü = gömülü emisyon − FAA − menşede ödenen karbon
 ```
 
-**Neden kritik:** Projenin en çarpıcı bulgusu buna dayanıyor — "2026'da CBAM
-faktörü %2,5 olsa da benchmark üstü firma emisyonunun %36'sı üzerinden öder."
-Formül yanlışsa bütün mesaj çöker.
+| Değişken | Anlamı |
+|---|---|
+| `CBAM_y` | Resmî CBAM faktörü (ücretsiz tahsisat payı) — D1 tablosu |
+| `CSCF_y` | Cross-sectoral correction factor, EU ETS Md. 10a(5) |
+| `BM*_g` | CBAM benchmark'ı — Ek nokta 5, **Column A** |
+| `M_g` | İthal edilen malın kütlesi |
 
-**Doğrula:**
-- Ücretsiz tahsisat düşümü gerçekten **benchmark üzerinden** mi yapılıyor,
-  yoksa gömülü emisyon üzerinden mi?
-- `(1 − faktör)` çarpanı doğru yerde mi?
-- Sonuç negatif olamaz kuralı mevzuatta var mı?
+**Doğrulanan:** Ücretsiz tahsisat gerçekten **benchmark üzerinden** hesaplanıp
+gömülü emisyondan **düşülüyor**. Projenin ana bulgusu — *"benchmark üstü firma
+2026'da bile ciddi yükümlülük altına girer"* — **geçerli.**
 
-**Kaynak:** _________________
+> Rehber No. 4, s.6: *"the free allocation adjustment which authorised CBAM
+> declarants can **deduct from the embedded emissions** to determine the
+> 'CBAM obligation'"*
 
----
+**Eksik olan:** `CSCF_y` terimi kodda yoktu. 2026–2030 için değeri 1,0
+(Commission Implementing Decision (EU) 2026/1862), dolayısıyla bugün sayısal
+etkisi yok — ama 2031'den itibaren değişebilir ve o zaman motor sessizce
+yanlış hesap yapardı. `certificates_due(cscf = )` olarak eklendi, `cbam_cscf()`
+ile sağlanıyor.
 
-## D3 — Menşede ödenen karbon düşümü ⬜
-
-**Kod:** [`R/cbam.R`](../../R/cbam.R) → `certificates_due(carbon_paid_origin=)`
-
-Kod şu an menşede ödenen karbonu **tCO2e cinsinden** düşüyor.
-
-**Doğrula:** Mevzuat *fiilen ödenen karbon fiyatı* üzerinden mi düşüm
-öngörüyor? Öyleyse mevcut parametre yanlış birimde ve yeniden tasarlanmalı.
-Türkiye ETS devreye girdiğinde bu, aracın en değerli özelliği olacak —
-şimdiden doğru kurmak gerek.
-
-**Kaynak:** _________________
+**Column A / Column B ayrımı (not):** Column A tek üretim süreçleri, Column B
+tüm üretim zincirleri için. Hesap makinesi tek süreç varsayıyor → **Column A**.
 
 ---
 
-## D4 — De minimis eşiği ⬜
+## ⬜ D3 — Menşede ödenen karbon düşümü
 
-**Kod:** [`R/cbam.R`](../../R/cbam.R) → `is_de_minimis()`, varsayılan 50 tCO2e
+Kod `carbon_paid_origin`'i **tCO2e** cinsinden düşüyor. Rehber No. 4 s.9
+"carbon price already paid" ifadesini kullanıyor — **fiyat mı, miktar mı**
+belirsiz. Türkiye ETS'i devreye girdiğinde bu, aracın en değerli özelliği
+olacak; birim yanlışsa sonuç tamamen yanlış olur.
 
-Kodun iddiası: ithalatçı başına yıllık 50 tCO2e altındaki gömülü emisyon muaf.
-
-**Doğrula:** Eşik 50 **tCO2e** mi yoksa 50 **ton mal** mı? Omnibus'ta hangi
-biçimde geçiyor? İthalatçı başına mı, sevkiyat başına mı, yıllık mı?
-
-**Kaynak:** _________________
+**Nereye bak:** CBAM Tüzüğü Madde 9 ve ilgili uygulama tüzüğü.
 
 ---
 
-## D5 — 2026 öncesi mali yükümlülük yok ⬜
+## ⬜ D4 — De minimis eşiği
 
-**Kod:** [`R/cbam.R`](../../R/cbam.R) → `cbam_phase_in_factor()`, `year < 2026 → 0`
+Kod: ithalatçı başına yıllık **50 tCO2e** altı muaf.
+**Doğrula:** 50 **tCO2e** mi, 50 **ton mal** mı? İthalatçı başına mı, sevkiyat
+başına mı? 2025 sadeleştirme paketiyle değişti.
 
-Kodun iddiası: geçiş döneminde yalnızca raporlama var, sertifika alınmıyor.
-
-**Kaynak:** _________________
-
----
-
-## D6 — Dolaylı (elektrik) emisyonların kapsamı ⬜ ⚠️ EN YÜKSEK BEDELLİ
-
-**Kod:** [`data/urunler.csv`](../../data/urunler.csv) → `dolayli_kapsamda` sütunu
-
-Şu an tüm satırlarda `hayir` yazıyor — **bu doğrulanmamış bir varsayım.**
-
-**Doğrula:** Hangi ürünlerde dolaylı emisyonlar CBAM yükümlülüğüne giriyor?
-CBAM Tüzüğü'nde ürün bazında bunu belirleyen bir ek/sütun var; bul ve
-her ürün için `evet`/`hayir` değerini oradan gir.
-
-**Beklenen ayrım:** Çimento ve gübrede dolaylı emisyonların dahil olduğu,
-demir-çelik ve alüminyumda olmadığı yönünde bir ayrım olması muhtemel —
-ama bunu metinden teyit et, varsayma.
-
-**Pratik bedeli:** 15.000 tonluk alüminyum ihracatçısı için 2034'te
-136 EUR/ton (yalnız doğrudan) ile 608 EUR/ton (dolaylı dahil) arasındaki
-fark — yılda yaklaşık **7 milyon EUR**.
-
-**Kaynak:** _________________
+**Nereye bak:** CBAM Tüzüğü (konsolide 02023R0956-20251020), Madde 2.
 
 ---
 
-## D7 — Benchmark değerleri ⬜
+## ✅ D5 — 2026 öncesi mali yükümlülük yok
 
-**Kod:** [`data/benchmarks.csv`](../../data/benchmarks.csv)
-
-**Doğrula — iki katmanlı soru:**
-
-1. Değerlerin kendisi doğru mu?
-2. **Hangi tahsisat dönemi geçerli?** Ücretsiz tahsisat benchmark'ları dönem
-   dönem güncelleniyor (2021–2025, 2026–2030, ...). CBAM 2026'da ücretlendirmeye
-   başlıyor, yani **2026–2030 dönemi benchmark'ları** geçerli olmalı; 2021–2025
-   değerlerini kullanmak sessiz bir hata olur.
-
-Her satırın `gecerli_baslangic` / `gecerli_bitis` sütunları bu yüzden var.
-
-**Kaynak:** _________________
+**Kaynak:** Rehber No. 3, s.8: geçiş dönemi (1 Ekim 2023 – 31 Aralık 2025)
+"learning and data-collection phase"; kesin dönem 1 Ocak 2026'da başlıyor ve
+mali yükümlülük o zaman doğuyor. Tablo 2-1'de 2025 için CBAM factor %100
+(tahsisat tam) → yükümlülük payı 0. **Kod doğru.**
 
 ---
 
-## D8 — Kapsamdaki ürünler ve CN kodları ⬜
+## ✅ D6 — Dolaylı emisyon kapsamı — **DOĞRULANDI**
 
-**Kod:** [`data/urunler.csv`](../../data/urunler.csv) → `cn_kodlari` sütunu
+**Kaynak:** Rehber No. 3, s.19–20; Methodology Act Madde 3(2).
 
-Şu an boş. CBAM Tüzüğü Ek I'deki CN kodlarını her ürün satırına gir.
+> *"The indirect emissions are relevant for all goods that are listed in
+> **Annex I but not in Annex II** to the CBAM Regulation. That means that
+> indirect emissions are relevant for: Goods from the **cement sector**;
+> Goods from the **fertiliser sector**; **Agglomerated iron ores and
+> concentrates** ('sintered ore')."*
 
-**Doğrula:** Kullanıcının ihraç ettiği ürünün CN kodu gerçekten kapsamda mı?
-Alüminyumda ham metal ile yarı mamul arasında fark var; çelikte de bazı
-alt kalemler kapsam dışı olabilir.
+| Sektör | Dolaylı emisyon kapsamda mı? |
+|---|---|
+| Çimento | ✅ **Evet** |
+| Gübre | ✅ **Evet** |
+| Aglomere demir cevheri (sinter) | ✅ **Evet** |
+| Demir-çelik (diğer) | ❌ Hayır (Ek II'de) |
+| Alüminyum | ❌ Hayır (Ek II'de) |
+| Hidrojen / kimyasallar | ❌ Hayır (Ek II'de) |
 
-**Kaynak:** _________________
+**Sonuç:** Alüminyum senaryosundaki **136 EUR/ton** rakamı geçerli, 608 değil.
+Kodun `dolayli_kapsamda = hayir` varsayımı çelik ve alüminyum için doğruydu.
+Çimento, gübre ve sinter satırları `evet` olarak düzeltildi.
+
+**İnce nokta:** Sinterin dolaylı emisyonu, öncül (precursor) olarak
+kullanıldığı için **demir-çelik ürünlerinde de** kalıntı olarak görünür —
+karmaşık ürünün kendisi Ek II'de olsa bile. Modelde henüz yok.
+
+### Yan bulgu — birim sorunu ⚠️
+
+Rehber No. 3, s.20: çimento ve gübrede fonksiyonel birim **ton ürün değil**:
+- **Çimento → ton klinker**
+- **Gübre → kg azot**
+
+Motorun `miktar (ton) × yoğunluk` modeli bu iki sektörde **yapısal olarak
+yanlış** olurdu. `urunler.csv`'ye not düşüldü; değer girilmeden önce birim
+alanı eklenmeli.
+
+### Yan bulgu — gazlar
+
+Rehber No. 3, s.21: CO₂ tüm sektörlerde; ayrıca **gübre için N₂O**,
+**alüminyum için PFC**. Model şu an yalnızca CO₂e toplamıyla çalışıyor.
 
 ---
 
-## Yapısal Not — Elektrik farklı bir hesap istiyor ⚠️
+## ⬜ D7 — Benchmark değerleri — kaynak belirlendi
 
-Motorun mevcut modeli şunu varsayıyor:
+**Kaynak:** Free Allocation Adjustment Act (CIR (EU) 2025/2620), **Ek nokta 5,
+Column A**. Komisyon ayrıca hazır bir tablo yayımlamış:
 
 ```
-gömülü emisyon = miktar (ton) × emisyon yoğunluğu (tCO2e/ton)
-ücretsiz tahsisat = ürün benchmark'ı × miktar × (1 − faktör)
+CBAM Benchmarks_20260206.xlsx
+taxation-customs.ec.europa.eu → CBAM legislation and guidance
 ```
 
-**Elektrik bu kalıba oturmuyor:** birim MWh, "ürün benchmark'ı" aynı anlamda
-yok, varsayılan değerler menşe ülke şebeke karbon yoğunluğuna göre
-belirleniyor ve özel kurallar var.
+Rehber No. 4 s.6'daki ilgili ürün benchmark listesi: aglomere demir cevheri,
+sıcak metal, EAF karbon çeliği, EAF yüksek alaşımlı çelik, demir döküm,
+birincil alüminyum, gri çimento klinkeri, beyaz çimento klinkeri (devamı var).
 
-**Karar:** Elektrik `data/urunler.csv`'ye satır olarak eklenmeyecek. Kendi
-hesap yolunu gerektiriyor (`R/electricity.R`), ayrı bir iş kalemi.
-Hidrojenin standart kalıba oturup oturmadığı da mevzuattan kontrol edilmeli.
+> ⚠️ **Dikkat:** Bu listede **ikincil alüminyum yok.** `alu-ikincil` için
+> kullandığımız 0,279 değerinin karşılığı olmayabilir. Değer girilirken
+> kontrol edilmeli.
 
-Bunu şimdi ayırmak, yanlış modele zorlamaktan iyidir.
+---
+
+## ⬜ D8 — Kapsamdaki ürünler ve CN kodları
+
+`urunler.csv` → `cn_kodlari` sütunu boş. CBAM Tüzüğü Ek I'den girilecek.
+
+---
+
+## Yapısal Not — Elektrik ✅ ayrı tutma kararı doğrulandı
+
+**Kaynak:** Rehber No. 4, bölüm 2.2.1:
+
+> *"No calculation is needed for determining the free allocation adjustment
+> (FAA) for electrical energy (CN code 2716 00 00), as it is **zero** according
+> to Article 1 of the Free Allocation Adjustment Act (electricity producers do
+> not get free allocation in the EU ETS)."*
+
+Elektrik için ücretsiz tahsisat **sıfır** — yani benchmark düşümü hiç yok ve
+birim MWh. Motorun kalıbına oturmuyor. **Ayrı tutma kararı doğru çıktı.**

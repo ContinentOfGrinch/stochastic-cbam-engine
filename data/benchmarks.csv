@@ -1,5 +1,5 @@
 urun_kodu,benchmark_tco2e_ton,kaynak_belge,kaynak_yeri,gecerli_baslangic,gecerli_bitis,durum,not
-celik-bof,1.288,,,,,dogrulanmadi,Sicak metal benchmark'i - 2026-2030 donemi degeri dogrulanmali
+celik-bof,1.288,,,,,dogrulanmadi,BM* Column A - CIR 2025/2620 Ek nokta 5'ten alinacak
 celik-eaf,0.215,,,,,dogrulanmadi,EAF karbon celigi benchmark'i - dogrulanmali
 alu-birincil,1.484,,,,,dogrulanmadi,Birincil aluminyum benchmark'i - dogrulanmali
 alu-ikincil,0.279,,,,,dogrulanmadi,Ikincil aluminyum benchmark'i - dogrulanmali
@@ -10,3 +10,4 @@ gubre-nitrik-asit,,,,,,dogrulanmadi,Deger girilmedi
 gubre-ure,,,,,,dogrulanmadi,Deger girilmedi
 gubre-karisik,,,,,,dogrulanmadi,Deger girilmedi
 hidrojen,,,,,,dogrulanmadi,Deger girilmedi
+demir-sinter,,,,,,dogrulanmadi,Deger girilmedi
