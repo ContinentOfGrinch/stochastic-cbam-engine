@@ -324,6 +324,28 @@ Katmanlar ayrıdır: `R/` altındaki motor saf hesap yapar ve hiçbir yere yazma
 - [ ] Duyarlılık analizi (Sobol indeksleri)
 - [ ] Görselleştirme katmanı ve raporlama şablonu
 
+## Bu Proje Nasıl Üretildi
+
+Fikir, kapsam ve yönlendirme **Selahattin İlhan**'a aittir: problem tanımı,
+hangi sektörlerin kapsama gireceği, ürün ile araştırma katmanının ayrılması,
+lisans ve atıf stratejisi, kapsamın dar tutulması ve her aşamadaki kabul/ret
+kararları.
+
+Kod, bir yapay zekâ asistanı (Anthropic Claude) ile eşli çalışılarak yazıldı.
+Mevzuat doğrulaması da aynı yöntemle yürütüldü: resmî Avrupa Komisyonu
+belgeleri indirildi, kodun her iddiası metinle karşılaştırıldı, bulgular
+kaynak referanslarıyla [`MEVZUAT_DOGRULAMA.md`](data-raw/mevzuat/MEVZUAT_DOGRULAMA.md)
+içinde kayda geçirildi. Bu denetim **sekiz iddiadan beşinde hata buldu.**
+
+> Bu not projenin kendi ilkesinin gereğidir: her sayının kaynağını göstermeyi
+> şart koşan bir araç, kendi üretim biçimini de gizlememelidir. Akademik
+> kullanımda bu bilginin beyan edilmesi ayrıca gerekir.
+
+Doğrulanabilirliğin dayanağı kimin yazdığı değil, **kaynağın gösterilmiş
+olmasıdır**: her değer belgeye kadar izlenebilir, kaynak belgeler SHA256'larıyla
+depoda, 177 test dört ortamda koşuyor. Bunların hiçbiri okuyucunun bize
+güvenmesini gerektirmez.
+
 ## Lisans ve Katkı
 
 **AGPL-3.0-or-later** ([`LICENSE`](LICENSE)) + atıf ek şartı

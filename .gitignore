@@ -63,3 +63,10 @@ cikti/
 
 # Gelistirme gunlugu - yayinlanmaz
 MEMORY.md
+memory.md
+NOTES.md
+notes.md
+TODO.md
+*.local.*
+.env
+.env.*

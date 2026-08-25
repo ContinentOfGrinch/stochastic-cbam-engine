@@ -1,0 +1,25 @@
+# Satir sonlarini normalize et. Bu dosya olmadan depoda Windows'ta CRLF,
+# Linux'ta LF karisimi olusuyor; diff'ler gurultuluyor ve katkilar
+# platformlar arasi cakisiyor.
+* text=auto eol=lf
+
+# Kaynak ve veri dosyalari her zaman LF
+*.R      text eol=lf
+*.md     text eol=lf
+*.csv    text eol=lf
+*.yml    text eol=lf
+*.cff    text eol=lf
+VERSION  text eol=lf
+LICENSE  text eol=lf
+NOTICE   text eol=lf
+
+# Resmi kaynak belgeler ikili; git bunlara dokunmamali. Bu belgelerin
+# SHA256'lari KAYNAKLAR.md'de kayitli - tek bayt degisirse dogrulama
+# kirilir, dolayisiyla satir sonu donusumu kabul edilemez.
+*.pdf    binary
+*.xlsx   binary
+
+# GitHub dil istatistiklerinde resmi belgeler ve uretilmis veri sayilmasin;
+# depo "R projesi" olarak gorunsun.
+data-raw/**    linguist-documentation
+data/*.csv     linguist-generated
