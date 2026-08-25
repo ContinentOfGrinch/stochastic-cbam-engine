@@ -87,7 +87,25 @@ Rehber No. 4 s.5'ten:
 |---|---|---|
 | CBAM Regulation | (EU) 2023/956 + (EU) 2025/2083 tadili | — |
 | Methodology Act | CIR (EU) 2025/2547 | Md. 7(7) |
-| Default Values Act | CIR (EU) 2025/2621 | Md. 7(7) |
+| Default Values Act | CIR (EU) 2025/2621, **CIR (EU) 2026/1740 ile revize** | Md. 7(7) |
+
+### Varsayılan değer sürümleri — dikkat
+
+Kaynak dosyanın `Version History` sayfasına göre:
+
+| Sürüm | Tarih | Dayanak |
+|---|---|---|
+| 1 | 16.12.2025 | CIR (EU) 2025/2621, Ek I |
+| **2** | **06.08.2026** | **CIR (EU) 2026/1740, Ek I ve II** ← kullandığımız |
+
+Sürüm 2 dolaylı emisyon değerlerini de içeriyor (Ek II). `Overview` sayfasındaki
+*"bu dosya dolaylı emisyon değerlerini içermez"* uyarısı Sürüm 1'den kalmadır ve
+verinin kendisiyle çelişir — gübre satırlarının 27/29'unda dolaylı değer vardır.
+
+> **Piyasa gözlemi (2026-08-25):** Bir rakip hesaplayıcı CN 28141000 (amonyak,
+> Türkiye) için 2,293 kullanıyor. Bu değer Sürüm 2'nin ne Türkiye (2,270) ne de
+> "diğer ülkeler" (3,130) sayfasında var — büyük olasılıkla Sürüm 1 değeri.
+> Formül birebir aynı; fark yalnızca veri sürümünden geliyor.
 | Verification Principles Act | CIR (EU) 2025/2546 | Md. 8(3) |
 | Accreditation & Verification | CDR (EU) 2025/2551 | Md. 18(3) |
 | **Free Allocation Adjustment Act** | **CIR (EU) 2025/2620** | **Md. 31(2)** |

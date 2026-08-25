@@ -42,7 +42,7 @@ Ayrıntı: `data-raw/mevzuat/MEVZUAT_DOGRULAMA.md`
 | Tablo | Kayıt | Kaynak |
 |---|---|---|
 | `data/benchmarks.csv` | 570 CN kodu | CBAM Benchmarks tablosu (06.02.2026) |
-| `data/varsayilan_yogunluk.csv` | 283 CN kodu, Türkiye | Default Values Act, CIR (EU) 2025/2621 (06.08.2026) |
+| `data/varsayilan_yogunluk.csv` | 283 CN kodu, Türkiye | Default Values Act — **CIR (EU) 2026/1740**, Sürüm 2 (06.08.2026); CIR (EU) 2025/2621'i revize eder |
 
 `--cn` ve `--miktar` vermeniz yeterli: benchmark ve varsayılan emisyon
 yoğunluğu resmî tablolardan otomatik gelir ve çıktıda kaynağıyla gösterilir.

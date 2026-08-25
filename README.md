@@ -142,7 +142,12 @@ Kaynak: CBAM-BENCHMARKS-2026-02-06, CN 72081000, Column B
 | Tablo | Kayıt | Kaynak |
 |---|---|---|
 | `data/benchmarks.csv` | 570 CN kodu | CBAM Benchmarks tablosu (06.02.2026) |
-| `data/varsayilan_yogunluk.csv` | 283 CN kodu, Türkiye | Default Values Act, CIR (EU) 2025/2621 |
+| `data/varsayilan_yogunluk.csv` | 283 CN kodu, Türkiye | Default Values Act — **CIR (EU) 2026/1740** (Sürüm 2, 06.08.2026) |
+
+> **Sürüm önemlidir.** Varsayılan emisyon değerleri CIR (EU) 2025/2621 ile
+> yayımlandı, **CIR (EU) 2026/1740** ile revize edildi. Araç Sürüm 2'yi
+> kullanır ve her çıktıda hangi belgeden geldiğini yazar. Kaynak dosya
+> SHA256'sıyla birlikte `data-raw/mevzuat/` altındadır.
 
 Resmî AB belgeleri `data-raw/mevzuat/` altında **değiştirilmemiş halde** depoda
 durur, SHA256'larıyla birlikte. `data/` altındaki CSV tabloları bunlardan

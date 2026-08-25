@@ -136,8 +136,15 @@ cbam_benchmark_by_cn <- function(cn_kodu, sutun = "B") {
 
 #' Varsayilan emisyon yogunlugu tablosu
 #'
-#' Kaynak: Default Values Act, CIR (EU) 2025/2621 - Komisyon'un yayimladigi
-#' ulke bazli varsayilan deger tablosu (6 Agustos 2026 guncellemesi).
+#' Kaynak: Default Values Act. Ilk surum CIR (EU) 2025/2621 (16 Aralik 2025);
+#' kullandigimiz Surum 2, **CIR (EU) 2026/1740** ile revize edilmis hali
+#' (6 Agustos 2026, Ek I ve II). Surum bilgisi kaynak dosyanin
+#' "Version History" sayfasindadir.
+#'
+#' Surum farki onemli: bazi rakip araclar hala Surum 1 degerleriyle
+#' calisiyor olabilir. Ornek: CN 28141000 (amonyak, Turkiye) Surum 2'de
+#' toplam 2,270; piyasada 2,293 rakamina rastlandi - bu deger Surum 2'nin
+#' ne Turkiye ne de "diger ulkeler" sayfasinda yok.
 #'
 #' Bu degerler mevzuatin ongordugu varsayilanlardir. Kendi olctugunuz tesis
 #' degeri her zaman bunlarin onune gecmelidir; varsayilanlar bilerek muhafazakar
