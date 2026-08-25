@@ -9,8 +9,8 @@ Kodun mevzuata dair **8 iddiası** ve her birinin doğrulama durumu.
 |---|---|---|
 | D1 | Phase-in takvimi | ✅ **DOĞRULANDI — hata bulundu ve düzeltildi** |
 | D2 | Sertifika hesabı formülü | ✅ **DOĞRULANDI — eksik terim eklendi** |
-| D3 | Menşede ödenen karbon düşümü | ⬜ Açık |
-| D4 | De minimis eşiği | ⬜ Açık |
+| D3 | Menşede ödenen karbon düşümü | ✅ **DOĞRULANDI — hata bulundu ve düzeltildi** |
+| D4 | De minimis eşiği | ✅ **DOĞRULANDI — hata bulundu ve düzeltildi** |
 | D5 | 2026 öncesi mali yükümlülük yok | ✅ Doğrulandı |
 | D6 | Dolaylı emisyon kapsamı | ✅ **DOĞRULANDI** |
 | D7 | Benchmark değerleri | ✅ **DOĞRULANDI — 570 CN kodu resmî tablodan** |
@@ -93,24 +93,61 @@ tüm üretim zincirleri için. Hesap makinesi tek süreç varsayıyor → **Colu
 
 ---
 
-## ⬜ D3 — Menşede ödenen karbon düşümü
+## ✅ D3 — Menşede ödenen karbon — **HATA BULUNDU, DÜZELTİLDİ**
 
-Kod `carbon_paid_origin`'i **tCO2e** cinsinden düşüyor. Rehber No. 4 s.9
-"carbon price already paid" ifadesini kullanıyor — **fiyat mı, miktar mı**
-belirsiz. Türkiye ETS'i devreye girdiğinde bu, aracın en değerli özelliği
-olacak; birim yanlışsa sonuç tamamen yanlış olur.
+**Kaynak:** Rehber No. 1, s.13–15; CBAM Tüzüğü Md. 6(2)(c), 7, 9 ve 31.
 
-**Nereye bak:** CBAM Tüzüğü Madde 9 ve ilgili uygulama tüzüğü.
+Resmî formülün tamamı:
+
+```
+CBAM Obligation_g = max[ 0 ; ( SEE_g − SEFA_g − SECPP_g / RP_CBAM ) ] × M_g
+```
+
+| Değişken | Anlamı |
+|---|---|
+| `SEE_g` | Gömülü emisyon yoğunluğu (Md. 7) |
+| `SEFA_g` | Ücretsiz tahsisat yoğunluğu (Md. 31) |
+| **`SECPP_g`** | **Menşede ödenen karbon FİYATI — mal tonu başına EUR** (Md. 9) |
+| **`RP_CBAM`** | **CBAM sertifikası referans fiyatı, EUR/tCO2e** (Md. 21) |
+| `M_g` | İthal edilen malın kütlesi |
+
+**Hata:** Kod `carbon_paid_origin`'i doğrudan **tCO2e** olarak düşüyordu.
+Doğrusu bir **fiyat** (EUR/ton mal) ve sertifika referans fiyatına bölünerek
+tCO2e'ye çevriliyor. Birim tamamen yanlıştı.
+
+**Düzeltme:** `certificates_due()` artık `carbon_price_paid` (EUR/ton mal) ve
+`cbam_reference_price` (EUR/tCO2e) alıyor; ikincisi verilmezse hata veriyor.
+CLI'de `--odenen-karbon-fiyati` ve `--sertifika-referans-fiyati`.
+
+> **Türkiye ETS'i için önemli:** Ödenen tutar iade ve tazminatlar düşülmüş
+> *etkin* fiyat olmalı ve Md. 9(2) uyarınca bağımsız bir kişi tarafından
+> belgelenmeli. Bunun için ayrı bir rehber belge var.
 
 ---
 
-## ⬜ D4 — De minimis eşiği
+## ✅ D4 — De minimis eşiği — **HATA BULUNDU, DÜZELTİLDİ**
 
-Kod: ithalatçı başına yıllık **50 tCO2e** altı muaf.
-**Doğrula:** 50 **tCO2e** mi, 50 **ton mal** mı? İthalatçı başına mı, sevkiyat
-başına mı? 2025 sadeleştirme paketiyle değişti.
+**Kaynak:** CBAM Tüzüğü Md. 2a ve **Ek VII nokta 1**; Rehber No. 1, s.23.
 
-**Nereye bak:** CBAM Tüzüğü (konsolide 02023R0956-20251020), Madde 2.
+> *"exempt from CBAM obligations if the **net mass of imported goods** in a
+> given calendar year does not cumulatively exceed the single mass-based
+> threshold... The current threshold is set at **50 tonnes of net mass**."*
+
+**Hata:** Kod **50 tCO2e emisyon** karşılaştırıyordu. Doğrusu **50 ton net
+kütle**. Birim yanlıştı.
+
+Eşiğin üç kritik özelliği — ikisi kodda hiç yoktu:
+
+| Özellik | Durum |
+|---|---|
+| Birim **net kütle** (ton), emisyon değil | ✅ düzeltildi |
+| İthalatçı başına, **takvim yılı boyunca kümülatif** | ⚠️ araç tek miktar görür, çıktıda uyarıyor |
+| **Tüm CN kodları toplamında** geçerli | ⚠️ aynı |
+| Yıl içinde aşılırsa o yılın **tamamı** yükümlü hale gelir | ⚠️ çıktıda uyarılıyor |
+| **Elektrik ve hidrojene uygulanmaz** | ✅ eklendi |
+
+Araç tek bir miktar için hesap yaptığından ithalatçının yıllık toplamını
+bilemez; çıktı bunu açıkça söylüyor.
 
 ---
 

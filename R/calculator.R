@@ -28,7 +28,9 @@
 #' @param year Yukumluluk yili.
 #' @param carbon_price EU ETS sertifika fiyati (EUR / tCO2e).
 #' @param fx_rate Doviz kuru (TRY / EUR). 1 birakilirsa yalnizca EUR raporlanir.
-#' @param carbon_paid_origin Mense ulkede fiilen odenmis karbon (tCO2e).
+#' @param carbon_price_paid Mense ulkede fiilen odenmis karbon FIYATI
+#'   (SECPP), mal tonu basina EUR. Miktar degil fiyattir.
+#' @param cbam_reference_price CBAM sertifikasi referans fiyati (EUR/tCO2e).
 #' @param ei_indirect Dolayli (elektrik) emisyon yogunlugu (tCO2e / ton).
 #' @param include_indirect Dolayli emisyonlar hesaba katilsin mi? CBAM'de
 #'   demir-celik icin gecis doneminde raporlanir ancak vergilendirilmez.
@@ -50,7 +52,8 @@ cbam_estimate <- function(quantity,
                           year = 2026,
                           carbon_price = 80,
                           fx_rate = 1,
-                          carbon_paid_origin = 0,
+                          carbon_price_paid = 0,
+                          cbam_reference_price = NULL,
                           ei_indirect = 0,
                           include_indirect = FALSE,
                           uncertainty = TRUE,
@@ -80,17 +83,20 @@ cbam_estimate <- function(quantity,
   factor_y <- cbam_phase_in_factor(year)
   free_allocation <- benchmark * quantity * (1 - factor_y)
   certificates <- certificates_due(
-    embedded           = embedded,
-    quantity           = quantity,
-    benchmark          = benchmark,
-    cbam_factor        = factor_y,
-    carbon_paid_origin = carbon_paid_origin
+    embedded             = embedded,
+    quantity             = quantity,
+    benchmark            = benchmark,
+    cbam_factor          = factor_y,
+    carbon_price_paid    = carbon_price_paid,
+    cbam_reference_price = cbam_reference_price
   )
   cost <- cbam_cost(certificates, carbon_price, fx_rate)
 
-  # De minimis muafiyeti: yillik 50 tCO2e altindaki gomulu emisyon
-  # CBAM yukumlulugu dogurmaz.
-  exempt <- is_de_minimis(embedded)
+  # De minimis: esik 50 ton NET KUTLE (emisyon degil). Ithalatci basina
+  # yillik kumulatif ve tum CN kodlari toplaminda gecerli oldugu icin
+  # buradaki kontrol yalnizca "bu miktar tek basina esigin altinda" der.
+  exempt <- is_de_minimis(quantity, sektor = if (!is.null(reference))
+                            reference$sektor else NULL)
   if (exempt) {
     certificates <- 0
     cost <- list(cost_eur = 0, cost_local = 0)
@@ -109,7 +115,6 @@ cbam_estimate <- function(quantity,
       base_year          = base_year,
       carbon_price_0     = carbon_price,
       fx_0               = fx_rate,
-      carbon_paid_origin = carbon_paid_origin,
       seed               = seed,
       inflation_tr       = inflation_tr,
       inflation_eu       = inflation_eu,
@@ -136,7 +141,8 @@ cbam_estimate <- function(quantity,
         include_indirect = include_indirect, ei_total = ei_total,
         benchmark = benchmark, year = year, cbam_factor = factor_y,
         carbon_price = carbon_price, fx_rate = fx_rate,
-        carbon_paid_origin = carbon_paid_origin,
+        carbon_price_paid = carbon_price_paid,
+        cbam_reference_price = cbam_reference_price,
         theta_sdlog = theta_sdlog, base_year = base_year,
         horizon = max(year - base_year, 0), n_sims = n_sims, seed = seed,
         inflation_tr = inflation_tr, inflation_eu = inflation_eu,
@@ -219,9 +225,15 @@ print.cbam_estimate <- function(x, ...) {
   if (isTRUE(d$de_minimis)) {
     cat("\n"); cat(thin, "\n")
     cat("  DE MINIMIS MUAFIYETI\n\n")
-    cat(sprintf("  Gomulu emisyon %s tCO2e, 50 tCO2e esiginin altinda.\n",
-                fmt_num(d$embedded)))
-    cat("  CBAM yukumlulugu dogmuyor; sertifika alinmasi gerekmiyor.\n")
+    cat(sprintf("  Ithalat miktari %s ton, 50 ton net kutle esiginin altinda.\n",
+                fmt_num(i$quantity)))
+    cat("  Bu miktar icin CBAM yukumlulugu dogmuyor.\n\n")
+    cat("  !! ONEMLI: Esik ITHALATCI BASINA ve TAKVIM YILI BOYUNCA\n")
+    cat("     KUMULATIFTIR; tum CN kodlari toplaminda gecerlidir.\n")
+    cat("     Yil icinde 50 tonu asarsaniz, o yil ithal ettiginiz TUM mallar\n")
+    cat("     yukumlu hale gelir - esik asilmadan once gelenler dahil.\n")
+    cat("     Burada yalnizca bu tek miktar kontrol edildi.\n")
+    cat("     Kaynak: CBAM Tuzugu Md. 2a, Ek VII nokta 1\n")
     cat(line, "\n\n")
     return(invisible(x))
   }
@@ -243,9 +255,14 @@ print.cbam_estimate <- function(x, ...) {
         paste0("-", fmt_num(d$free_allocation)), "tCO2e")
   cat(sprintf("  %-21s (%s = 1 - CBAM faktoru %s)\n", "",
               fmt_num(kalan_faktor, 3), fmt_num(i$cbam_factor, 3)))
-  if (i$carbon_paid_origin > 0) {
-    satir("Mensede odenen karbon", "",
-          paste0("-", fmt_num(i$carbon_paid_origin)), "tCO2e")
+  if (i$carbon_price_paid > 0) {
+    satir("Mensede odenen karbon",
+          sprintf("%s x %s / %s", fmt_num(i$quantity),
+                  fmt_num(i$carbon_price_paid, 2),
+                  fmt_num(i$cbam_reference_price, 2)),
+          paste0("-", fmt_num(i$quantity * i$carbon_price_paid /
+                                i$cbam_reference_price)), "tCO2e")
+    cat(sprintf("  %-21s (EUR/ton mal / sertifika referans fiyati)\n", ""))
   }
   cat("  ", thin, "\n", sep = "")
   satir("SERTIFIKA YUKUMLULUGU", "", fmt_num(d$certificates), "tCO2e")

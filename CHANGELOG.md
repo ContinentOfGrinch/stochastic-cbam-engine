@@ -23,8 +23,17 @@ SHA256'larıyla birlikte.
 | D6 | Dolaylı emisyon kapsamı | ✅ Yalnızca çimento, gübre, sinter |
 | D7 | Benchmark değerleri | ✅ 570 CN kodu, resmî tablodan |
 | D8 | CN kodları | ✅ |
-| D3 | Menşede ödenen karbonun birimi | ⬜ **Açık** |
-| D4 | De minimis eşiği | ⬜ **Açık** |
+| D3 | Menşede ödenen karbonun birimi | ✅ **Hata bulundu ve düzeltildi** |
+| D4 | De minimis eşiği | ✅ **Hata bulundu ve düzeltildi** |
+
+**Sekiz iddianın sekizi de doğrulandı; dördünde hata bulundu ve düzeltildi.**
+
+| Madde | Hata | Düzeltme |
+|---|---|---|
+| D1 | 2031/2032/2033 phase-in faktörleri yanlıştı | Resmî tablodan türetiliyor |
+| D2 | CSCF terimi eksikti | Formüle eklendi |
+| **D3** | Menşede ödenen karbon **tCO2e** olarak düşülüyordu | **Bir fiyattır** (EUR/ton mal); sertifika referans fiyatına bölünür |
+| **D4** | De minimis **50 tCO2e emisyon** sanılıyordu | **50 ton net kütle**; elektrik ve hidrojene uygulanmaz |
 
 Ayrıntı: `data-raw/mevzuat/MEVZUAT_DOGRULAMA.md`
 

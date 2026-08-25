@@ -32,7 +32,6 @@
 #'   olarak ayirmak isteyen ileri kullanim icin elle verilebilir.
 #' @param carbon_price_0 Baslangic EU ETS fiyati (EUR/tCO2e).
 #' @param fx_0 Baslangic kuru (TRY/EUR).
-#' @param carbon_paid_origin Mense ulkede odenmis karbon (tCO2e).
 #' @param seed Tekrarlanabilirlik icin rastgele sayi tohumu. Cagiranin RNG
 #'   durumu fonksiyon cikisinda geri yuklenir.
 #' @param ... \code{simulate_market()} fonksiyonuna aktarilan ek parametreler
@@ -50,7 +49,6 @@ run_cbam_mc <- function(n_sims = 10000,
                         horizon = NULL,
                         carbon_price_0 = 75,
                         fx_0 = 1,
-                        carbon_paid_origin = 0,
                         seed = NULL,
                         ...) {
   # Tohum yalnizca bu fonksiyonun icinde etkili olmali; cagiranin oturumundaki
@@ -108,8 +106,7 @@ run_cbam_mc <- function(n_sims = 10000,
     embedded = embedded,
     quantity = quantity,
     benchmark = benchmark,
-    cbam_factor = factor_y,
-    carbon_paid_origin = carbon_paid_origin
+    cbam_factor = factor_y
   )
 
   # 5) Maliyet
@@ -143,7 +140,7 @@ run_cbam_mc <- function(n_sims = 10000,
         benchmark = benchmark, year = year, base_year = base_year,
         horizon = horizon, cbam_factor = factor_y,
         carbon_price_0 = carbon_price_0, fx_0 = fx_0,
-        carbon_paid_origin = carbon_paid_origin, seed = seed
+        seed = seed
       )
     ),
     class = "cbam_mc"

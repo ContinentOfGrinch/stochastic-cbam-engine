@@ -61,7 +61,14 @@ ISTEGE BAGLI
   --yil <yil>             Yukumluluk yili           (varsayilan: 2026)
   --karbon-fiyati <EUR>   EU ETS fiyati             (varsayilan: 80)
   --kur <TRY/EUR>         Doviz kuru                (varsayilan: 1, yalniz EUR)
-  --mensede-odenen <t>    Turkiye'de odenmis karbon (varsayilan: 0)
+  --odenen-karbon-fiyati <EUR>
+                          Mensede fiilen odenmis karbon FIYATI, MAL TONU
+                          basina EUR (SECPP). Miktar degil FIYAT. Iade ve
+                          tazminatlar dusulmus olmali. CBAM Tuzugu Md. 9.
+  --sertifika-referans-fiyati <EUR>
+                          CBAM sertifikasi referans fiyati (EUR/tCO2e).
+                          Odenen karbon verildiyse ZORUNLU - odenen fiyat
+                          buna bolunerek tCO2e'ye cevrilir.
   --dolayli <tCO2e/ton>   Elektrik kaynakli dolayli emisyon
   --dolayli-dahil         Dolayli emisyonu hesaba kat
   --sacilim <sd>          Tesis verimliligi sacilimi (varsayilan: 0.20)
@@ -91,9 +98,9 @@ ORNEKLER
                     --yil 2030 --kur 48 --firma \'Ornek Celik A.S.\' \\
                     --rapor cikti/rapor.html
 
-  # Turkiye'de karbon odemesi yapilmis ise
-  Rscript hesapla.R --urun celik-hrc --miktar 250000 --yil 2030 \\
-                    --mensede-odenen 40000
+  # Turkiye'de karbon odemesi yapilmis ise (fiyat, miktar degil)
+  Rscript hesapla.R --cn 72081000 --miktar 250000 --yil 2030 \\
+                    --odenen-karbon-fiyati 12.5 --sertifika-referans-fiyati 80
 
 NOT
   Referans degerlerin her biri kaynagini tasir ve ciktida gosterilir.
@@ -277,7 +284,8 @@ sonuc <- tryCatch(
     year               = sayi("yil", 2026),
     carbon_price       = sayi("karbon-fiyati", 80),
     fx_rate            = sayi("kur", 1),
-    carbon_paid_origin = sayi("mensede-odenen", 0),
+    carbon_price_paid    = sayi("odenen-karbon-fiyati", 0),
+    cbam_reference_price = sayi("sertifika-referans-fiyati", NULL),
     ei_indirect        = sayi("dolayli", 0),
     include_indirect   = isTRUE(opt[["dolayli-dahil"]]),
     uncertainty        = !isTRUE(opt[["kesin"]]),

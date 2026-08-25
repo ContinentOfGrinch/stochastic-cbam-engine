@@ -108,17 +108,59 @@ expect("dusuk faktorde muafiyet buyuk",
        certificates_due(1900, 1000, 1.288, 0.025) < 700)
 expect("sertifika negatif olamaz",
        certificates_due(100, 1000, 1.288, 0.025) == 0)
-expect("mensede odenen karbon dusulur",
-       certificates_due(1900, 1000, 1.288, 1.0, carbon_paid_origin = 400) == 1500)
 expect_error("gecersiz cbam_factor reddedilir",
              certificates_due(1900, 1000, 1.288, 1.5))
+
+# --- D3: mensede odenen karbon bir FIYATTIR, miktar degil -----------------
+# Kaynak: Rehber No. 1 s.14, Denklem; CBAM Tuzugu Md. 9.
+#   CBAM Obligation = max[0 ; SEE - SEFA - SECPP/RP_CBAM] * M
+# Onceki surumde parametre dogrudan tCO2e olarak dusuluyordu - birim yanlisti.
+expect("odenen karbon referans fiyatina bolunerek dusulur",
+       { # 1000 ton, 32 EUR/ton odenmis, sertifika referansi 80 EUR/tCO2e
+         # -> dusum = 1000 * 32 / 80 = 400 tCO2e
+         certificates_due(1900, 1000, 1.288, 1.0,
+                          carbon_price_paid = 32,
+                          cbam_reference_price = 80) == 1500 })
+expect("yuksek referans fiyati dusumu kucultur",
+       { az <- certificates_due(1900, 1000, 1.288, 1.0,
+                                carbon_price_paid = 32,
+                                cbam_reference_price = 160)
+         cok <- certificates_due(1900, 1000, 1.288, 1.0,
+                                 carbon_price_paid = 32,
+                                 cbam_reference_price = 80)
+         az > cok })
+expect("odenen karbon sifirsa referans fiyati gerekmez",
+       certificates_due(1900, 1000, 1.288, 1.0) == 1900)
+expect_error("referans fiyati olmadan odenen karbon reddedilir",
+             certificates_due(1900, 1000, 1.288, 1.0, carbon_price_paid = 32))
+expect_error("negatif odenen karbon reddedilir",
+             certificates_due(1900, 1000, 1.288, 1.0, carbon_price_paid = -1,
+                              cbam_reference_price = 80))
+expect("odenen karbon yukumlulugu sifirin altina indiremez",
+       certificates_due(1900, 1000, 1.288, 1.0,
+                        carbon_price_paid = 500,
+                        cbam_reference_price = 80) == 0)
 
 expect("maliyet = sertifika * fiyat",
        cbam_cost(100, 80)$cost_eur == 8000)
 expect("kur cevrimi uygulanir",
        cbam_cost(100, 80, fx_rate = 40)$cost_local == 320000)
-expect("de minimis esigi 50 tCO2e",
+# --- D4: de minimis esigi 50 ton NET KUTLE, emisyon degil -----------------
+# Kaynak: CBAM Tuzugu Md. 2a ve Ek VII nokta 1; Rehber No. 1 s.23.
+# Onceki surumde 50 tCO2e emisyon olarak uygulaniyordu - birim yanlisti.
+expect("de minimis esigi 50 ton kutle",
        is_de_minimis(49) && !is_de_minimis(51))
+expect("esik kutleye bakar, emisyona degil",
+       { # 40 ton mal, cok yuksek yogunlukla bile muaf: kutle esigin altinda
+         is_de_minimis(40) })
+expect("buyuk kutle dusuk emisyonla bile muaf degil",
+       !is_de_minimis(1000))
+expect("hidrojen de minimis muafiyeti disinda",
+       !is_de_minimis(10, sektor = "Hydrogen"))
+expect("elektrik de minimis muafiyeti disinda",
+       !is_de_minimis(10, sektor = "electricity"))
+expect("demir-celik muafiyet kapsaminda",
+       is_de_minimis(10, sektor = "Iron & Steel"))
 
 cat("\n== stochastic.R ==\n")
 set.seed(42)
@@ -487,10 +529,16 @@ expect("2026'da benchmark ustu firma yine de oder",
 expect("2026'da emisyonun ucte birinden fazlasi vergilenir",
        est26$deterministic$taxed_share > 0.33)
 
-expect("mensede odenen karbon dusulur",
+expect("mensede odenen karbon fiyat olarak dusulur",
        { e <- cbam_estimate(1000, 1.9, 1.288, year = 2034,
-                            carbon_paid_origin = 400, uncertainty = FALSE)
+                            carbon_price_paid = 32,
+                            cbam_reference_price = 80, uncertainty = FALSE)
          e$deterministic$certificates == 1500 })
+expect("hesap makinesi referans fiyati olmadan reddeder",
+       inherits(try(cbam_estimate(1000, 1.9, 1.288, year = 2034,
+                                  carbon_price_paid = 32,
+                                  uncertainty = FALSE), silent = TRUE),
+                "try-error"))
 expect("de minimis esigi altinda yukumluluk yok",
        { e <- cbam_estimate(20, 1.9, 1.288, year = 2034, uncertainty = FALSE)
          e$deterministic$de_minimis &&

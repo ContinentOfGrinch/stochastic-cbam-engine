@@ -108,7 +108,13 @@ cbam_phase_in_factor <- function(year) {
 #'   metal icin yaklasik 1,288 tCO2e/ton.
 #' @param cbam_factor Yukumluluk payi, bkz. \code{cbam_phase_in_factor()}.
 #'   \code{(1 - cbam_factor)} mevzuattaki resmi CBAM faktorune esittir.
-#' @param carbon_paid_origin Mense ulkede fiilen odenmis karbon yukumlulugu (tCO2e).
+#' @param carbon_price_paid Mense ulkede fiilen odenmis karbon fiyati
+#'   (SECPP), **mal tonu basina EUR**. Iade ve tazminatlar dusulmus olmali.
+#'   Bu bir MIKTAR degil FIYATTIR; sertifika referans fiyatina bolunerek
+#'   tCO2e'ye cevrilir.
+#' @param cbam_reference_price CBAM sertifikasinin referans fiyati
+#'   (RP_CBAM), EUR/tCO2e. Komisyon yillik ortalama olarak belirler
+#'   (CBAM Tuzugu Md. 21). \code{carbon_price_paid > 0} ise zorunludur.
 #' @param cscf Cross-sectoral correction factor, bkz. \code{cbam_cscf()}.
 #'   Varsayilan 1; su an tum yillar icin 1'dir.
 #' @return Satin alinmasi gereken sertifika miktari (tCO2e), negatif olamaz.
@@ -116,7 +122,8 @@ certificates_due <- function(embedded,
                              quantity,
                              benchmark,
                              cbam_factor,
-                             carbon_paid_origin = 0,
+                             carbon_price_paid = 0,
+                             cbam_reference_price = NULL,
                              cscf = 1) {
   stopifnot(is.numeric(embedded), is.numeric(quantity), is.numeric(benchmark))
   if (any(cbam_factor < 0 | cbam_factor > 1, na.rm = TRUE)) {
@@ -125,12 +132,31 @@ certificates_due <- function(embedded,
   if (any(cscf < 0, na.rm = TRUE)) {
     stop("cscf negatif olamaz.")
   }
-  # Free Allocation Adjustment Act, Ek nokta 2 ve 5:
-  #   SFA = CBAM_y * CSCF_y * BM*   (Denklem 2)
-  #   FAA = SEFA * M                (Denklem 1)
-  # Burada (1 - cbam_factor) = resmi CBAM_y, benchmark = BM*, quantity = M.
+  if (any(carbon_price_paid < 0, na.rm = TRUE)) {
+    stop("carbon_price_paid negatif olamaz.")
+  }
+
+  # Resmi formul (Rehber No. 1, s.14; CBAM Tuzugu Md. 6(2)(c), 7, 9 ve 31):
+  #
+  #   CBAM Obligation = max[0 ; SEE - SEFA - SECPP / RP_CBAM] * M
+  #
+  # SECPP mal tonu basina EUR cinsindendir; sertifika referans fiyatina
+  # bolununce tCO2e/ton olur. Onceki surumde bu parametre dogrudan tCO2e
+  # olarak dusuluyordu - birim yanlisti.
   free_allocation <- benchmark * quantity * (1 - cbam_factor) * cscf
-  pmax(embedded - free_allocation - carbon_paid_origin, 0)
+
+  odenen_dusum <- 0
+  if (any(carbon_price_paid > 0, na.rm = TRUE)) {
+    if (is.null(cbam_reference_price) || any(cbam_reference_price <= 0)) {
+      stop(paste0(
+        "carbon_price_paid verildiginde cbam_reference_price de gerekli.\n",
+        "  Odenen karbon bir FIYATTIR (EUR/ton mal); tCO2e'ye cevrilmesi icin\n",
+        "  CBAM sertifikasinin referans fiyati (EUR/tCO2e) lazim."))
+    }
+    odenen_dusum <- quantity * carbon_price_paid / cbam_reference_price
+  }
+
+  pmax(embedded - free_allocation - odenen_dusum, 0)
 }
 
 #' CBAM maliyeti (EUR ve yerel para)
@@ -148,14 +174,33 @@ cbam_cost <- function(certificates, carbon_price, fx_rate = 1) {
   list(cost_eur = cost_eur, cost_local = cost_eur * fx_rate)
 }
 
-#' De minimis muafiyeti
+#' De minimis muafiyeti (kutle esigi)
 #'
-#' 2025 Omnibus duzenlemesi ile ithalatci basina yillik 50 tCO2e altindaki
-#' gomulu emisyonlar CBAM yukumlulugunden muaftir.
+#' Kaynak: CBAM Tuzugu Md. 2a ve Ek VII nokta 1; Rehber No. 1 s.23.
 #'
-#' @param embedded Gomulu emisyon (tCO2e).
-#' @param threshold Esik deger (tCO2e). Varsayilan 50.
-#' @return Mantiksal vektor: TRUE ise muaf.
-is_de_minimis <- function(embedded, threshold = 50) {
-  embedded < threshold
+#' Esik **50 ton NET KUTLE**dir - emisyon degil. Onceki surumde 50 tCO2e
+#' olarak uygulaniyordu; birim yanlisti.
+#'
+#' Esigin uc onemli ozelligi var:
+#'   - Ithalatci basina, takvim yili boyunca KUMULATIFTIR
+#'   - TUM CN kodlari toplaminda gecerlidir, urun basina degil
+#'   - Yil icinde asilirsa, o yil ithal edilen TUM mallar yukumlu hale gelir
+#'     (esik asilmadan once ithal edilenler dahil)
+#'
+#' Bu fonksiyon tek bir miktari kontrol eder; ithalatcinin yillik toplamini
+#' bilemez. Sonucu "bu miktar tek basina esigin altinda" diye okuyun.
+#'
+#' Muafiyet elektrik ve hidrojen ithalatina UYGULANMAZ.
+#'
+#' @param quantity Net kutle (ton).
+#' @param threshold Esik deger (ton). Varsayilan 50.
+#' @param sektor Sektor adi; "hydrogen" ise muafiyet uygulanmaz.
+#' @return Mantiksal vektor: TRUE ise (tek basina) esigin altinda.
+is_de_minimis <- function(quantity, threshold = 50, sektor = NULL) {
+  if (!is.null(sektor) &&
+        tolower(trimws(sektor)) %in% c("hydrogen", "hidrojen", "electricity",
+                                       "elektrik")) {
+    return(rep(FALSE, length(quantity)))
+  }
+  quantity < threshold
 }

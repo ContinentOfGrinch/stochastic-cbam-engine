@@ -115,8 +115,8 @@ Bu araç neyi bilmediğini söyler. Bir sonuca güvenmeden önce şunlara bakın
 | Sınır | Etkisi |
 |---|---|
 | **Öncüller (precursors) modellenmiyor** | Araç ürünü **tek üretim süreci** sayar. Girdi (slab, kütük, öncül) satın alıyorsanız, satın aldığınız malın gömülü emisyonu hesaba **girmez** ve sonuç eksik çıkar. Cevherden kendi üreten entegre tesisler için geçerlidir. |
-| **`--mensede-odenen` kullanmayın** | Menşede ödenen karbonun mevzuattaki birimi (tCO2e mi, fiilen ödenen fiyat mı) henüz doğrulanmadı. |
-| **De minimis eşiği doğrulanmadı** | 50 tCO2e mi, 50 ton mal mı — teyit edilmedi. Küçük sevkiyatları etkiler. |
+
+| **De minimis kümülatif eşiktir** | 50 ton net kütle, ithalatçı başına ve **tüm CN kodları toplamında** yıllık. Araç tek bir miktar görür; yıllık toplamınızı siz takip etmelisiniz. |
 | **Elektrik kapsam dışı** | Ücretsiz tahsisatı sıfır, birimi MWh; ayrı bir hesap yolu gerektirir. |
 | **Varsayılan yoğunluklar tesisinize ait değildir** | Default Values Act'ten gelen resmî değerlerdir ve bilerek **yüksek** seçilmişlerdir. **Kendi ölçtüğünüz değeri `--yogunluk` ile verin** — maliyetiniz büyük ihtimalle düşer. |
 | **Uzak yıl belirsizlik kuyruğu** | Karbon fiyatı Geometrik Brown Hareketi ile modellenir; ortalamaya dönüş ve AB Piyasa İstikrar Rezervi yoktur. Uzak yıllarda %95 üst sınırı gerçekçi olmayan fiyatlara uzanır. Bütçe için medyanı ve yakın yılları kullanın. |
@@ -206,7 +206,7 @@ cbam_var(sim, level = 0.95)
 Test ve demo:
 
 ```bash
-Rscript tests/test_engine.R                   # 161 test
+Rscript tests/test_engine.R                   # 172 test
 Rscript analysis/01_demo_turkiye_celik.R      # EAF vs BF-BOF senaryo demosu
 ```
 
@@ -277,7 +277,7 @@ data-raw/
   exiobase/       Büyük MRIO matrisleri (versiyonlanmaz)
   firma/          Firma düzeyi veri (versiyonlanmaz)
 tests/
-  test_engine.R   161 test (base R, harici test paketi gerektirmez)
+  test_engine.R   172 test (base R, harici test paketi gerektirmez)
 LICENSE                        AGPL-3.0 tam metni
 LICENSE-ADDITIONAL-TERMS.md    Atıf ek şartı (AGPL §7(b)) + marka notu
 NOTICE                         Telif, atıf ve veri kaynağı bildirimleri

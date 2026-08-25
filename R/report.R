@@ -160,10 +160,11 @@ cbam_rapor <- function(x, dosya, baslik = "CBAM Maliyet Raporu", firma = NULL) {
                         fmt_num(i$quantity), fmt_num(kalan, 3)),
                 paste0("−", fmt_num(d$free_allocation)), "tCO2e")
   )
-  if (i$carbon_paid_origin > 0) {
+  if (i$carbon_price_paid > 0) {
     satirlar <- c(satirlar,
       rapor_satir("Mensede odenen karbon", "",
-                  paste0("−", fmt_num(i$carbon_paid_origin)), "tCO2e"))
+                  paste0("−", fmt_num(i$quantity * i$carbon_price_paid /
+                                        i$cbam_reference_price)), "tCO2e"))
   }
   satirlar <- c(satirlar,
     rapor_satir("Sertifika yukumlulugu", "", fmt_num(d$certificates),
