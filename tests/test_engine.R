@@ -351,6 +351,42 @@ expect_error("bos CN kodu reddedilir", cbam_benchmark_by_cn(""))
 expect_error("gecersiz sutun reddedilir",
              cbam_benchmark_by_cn("72081000", "C"))
 
+# --- Varsayilan emisyon yogunluklari (Default Values Act) -----------------
+dv_tablo <- cbam_default_intensities()
+expect("varsayilan deger tablosu yuklendi", nrow(dv_tablo) > 200)
+expect("tablonun tamami dogrulandi",
+       all(trimws(dv_tablo$durum) == "dogrulandi"))
+expect("her satirin kaynagi var",
+       all(nzchar(trimws(dv_tablo$kaynak_belge))))
+expect("girilmis degerler pozitif",
+       { v <- dv_tablo$dogrudan
+         all(v[!is.na(v)] > 0) })
+expect("uyari uretmeden yukleniyor",
+       { u <- withCallingHandlers(
+           { cbam_default_intensities(); TRUE },
+           warning = function(w) stop("uyari uretti"))
+         isTRUE(u) })
+
+# Turkiye, CN 7208: resmi varsayilan 2,428 (dogrudan).
+# Bizim onceki tahminimiz 1,95 idi - yanlisti.
+expect("CN 7208 icin resmi Turkiye varsayilani 2,428",
+       { d <- cbam_default_intensity("7208")
+         abs(d$dogrudan - 2.428) < 1e-9 })
+expect("8 haneli kod 4 haneli kayitla onek eslesir",
+       { d <- cbam_default_intensity("72081000")
+         d$cn_kodu == "7208" && d$eslesme == "onek" })
+expect("celikte dolayli deger yok (D6 ile tutarli)",
+       is.na(cbam_default_intensity("7208")$dolayli))
+expect("varsayilan deger benchmark'tan buyuk (aksi halde yukumluluk cikmaz)",
+       { d <- cbam_default_intensity("7208")
+         b <- cbam_benchmark_by_cn("72081000")
+         d$dogrudan > b$benchmark })
+expect("kaynak metni ciktida tasiniyor",
+       nzchar(cbam_default_intensity("7208")$kaynak))
+expect("bilinmeyen CN icin NULL doner",
+       is.null(cbam_default_intensity("99999999")))
+expect("bos CN icin NULL doner", is.null(cbam_default_intensity("")))
+
 # --- Fonksiyonel birim: sessizce yanlis sonucu onleyen kontrol ------------
 # Rehber No. 3 s.20: cimentoda ton klinker, gubrede kg azot.
 expect("celikte birim ton urun",
@@ -519,8 +555,15 @@ expect("rapor provenans bloku iceriyor",
 expect("rapor kunyeyi tasiyor",
        grepl("0009-0007-4824-752X", rapor_html, fixed = TRUE) &&
          grepl("AGPL", rapor_html, fixed = TRUE))
-expect("dogrulanmamis veri raporda uyari uretiyor",
-       grepl("DOGRULANMAMIS", rapor_html, fixed = TRUE))
+# Referans degerlerin tamami (benchmark + varsayilan yogunluk) resmi
+# kaynaktan geldigi icin artik uyari CIKMAMALI. Bu test o durumu kilitler:
+# biri kaynaksiz bir deger eklerse uyari geri gelir ve test kirilir.
+expect("tamamen dogrulanmis referansta uyari cikmaz",
+       !grepl("DOGRULANMAMIS", rapor_html, fixed = TRUE))
+expect("celik-hrc referansi tamamen dogrulanmis sayilir",
+       isTRUE(cbam_product("celik-hrc")$dogrulandi))
+expect("dogrulama uyarisi dogrulanmis urun icin NULL",
+       is.null(cbam_dogrulama_uyarisi(cbam_product("celik-hrc"))))
 expect("referanssiz raporda dogrulama uyarisi cikmaz",
        { f3 <- file.path(tempdir(), "cbam_test_rapor3.html")
          e3 <- cbam_estimate(1000, 1.9, 1.288, year = 2030,

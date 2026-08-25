@@ -28,6 +28,21 @@ SHA256'larıyla birlikte.
 
 Ayrıntı: `data-raw/mevzuat/MEVZUAT_DOGRULAMA.md`
 
+### Referans veri — tamamı resmî
+
+| Tablo | Kayıt | Kaynak |
+|---|---|---|
+| `data/benchmarks.csv` | 570 CN kodu | CBAM Benchmarks tablosu (06.02.2026) |
+| `data/varsayilan_yogunluk.csv` | 283 CN kodu, Türkiye | Default Values Act, CIR (EU) 2025/2621 (06.08.2026) |
+
+`--cn` ve `--miktar` vermeniz yeterli: benchmark ve varsayılan emisyon
+yoğunluğu resmî tablolardan otomatik gelir ve çıktıda kaynağıyla gösterilir.
+**Hiçbir varsayılan değer projenin kendi tahmini değildir.**
+
+> Varsayılan yoğunluklar mevzuatın öngördüğü değerlerdir ve bilerek yüksek
+> seçilmişlerdir. Kendi ölçtüğünüz değeri `--yogunluk` ile verirseniz
+> maliyetiniz büyük ihtimalle düşer.
+
 ### Özellikler
 
 - **Hesap makinesi ve CLI** (`hesapla.R`) — CN kodunuzla hesap; benchmark resmî
@@ -46,7 +61,7 @@ Ayrıntı: `data-raw/mevzuat/MEVZUAT_DOGRULAMA.md`
 
 ### Kalite
 
-- 147 test, 4 ortamda geçiyor (Linux, Windows, macOS, R 4.2)
+- 161 test, 4 ortamda geçiyor (Linux, Windows, macOS, R 4.2)
 - Sürekli entegrasyon: GitHub Actions
 - **Sıfır çalışma zamanı bağımlılığı** — yalnızca R `base` ve `stats`; bu bir
   iddia değil, test edilen bir kural

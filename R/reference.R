@@ -64,8 +64,13 @@ cbam_read_table <- function(ad) {
 #'   iceren data.frame.
 cbam_products <- function() {
   d <- cbam_read_table("urunler")
-  d$varsayilan_yogunluk <- as.numeric(d$varsayilan_yogunluk)
-  d$varsayilan_sacilim  <- as.numeric(d$varsayilan_sacilim)
+  d$varsayilan_sacilim <- as.numeric(d$varsayilan_sacilim)
+  # Emisyon yogunlugu bu tabloda tutulmaz; mevzuatin varsayilan deger
+  # tablosundan CN kodu uzerinden gelir. Bkz. cbam_default_intensity().
+  d$varsayilan_yogunluk <- vapply(d$cn_kodu, function(cn) {
+    dv <- cbam_default_intensity(cn)
+    if (is.null(dv)) NA_real_ else dv$dogrudan
+  }, numeric(1), USE.NAMES = FALSE)
   d
 }
 
@@ -129,6 +134,73 @@ cbam_benchmark_by_cn <- function(cn_kodu, sutun = "B") {
   )
 }
 
+#' Varsayilan emisyon yogunlugu tablosu
+#'
+#' Kaynak: Default Values Act, CIR (EU) 2025/2621 - Komisyon'un yayimladigi
+#' ulke bazli varsayilan deger tablosu (6 Agustos 2026 guncellemesi).
+#'
+#' Bu degerler mevzuatin ongordugu varsayilanlardir. Kendi olctugunuz tesis
+#' degeri her zaman bunlarin onune gecmelidir; varsayilanlar bilerek muhafazakar
+#' (yuksek) secilir, cunku olcmemeyi odullendirmemek icin oyle tasarlanmislardir.
+#'
+#' @return CN kodu bazinda dogrudan/dolayli/toplam varsayilan degerler.
+cbam_default_intensities <- function() {
+  d <- cbam_read_table("varsayilan_yogunluk")
+  # Tabloda deger girilmemis hucreler var (Komisyon o ürün icin varsayilan
+  # yayimlamamis). Bos hucre NA olmali; as.numeric'in uyari uretmesi
+  # kullaniciya gosterilecek bir sey degil, beklenen durum.
+  sayiya <- function(x) {
+    x <- trimws(as.character(x))
+    x[!nzchar(x)] <- NA_character_
+    suppressWarnings(as.numeric(x))
+  }
+  d$dogrudan <- sayiya(d$dogrudan)
+  d$dolayli  <- sayiya(d$dolayli)
+  d$toplam   <- sayiya(d$toplam)
+  d
+}
+
+#' CN koduna gore varsayilan emisyon yogunlugu
+#'
+#' Varsayilan deger tablosu bazen 4 haneli, bazen 8 veya 10 haneli CN kodu
+#' kullanir. Bu yuzden en uzun onek eslesmesi aranir: 72081000 sorulursa
+#' once tam kod, yoksa 720810, yoksa 7208 denenir.
+#'
+#' @param cn_kodu CN kodu.
+#' @param ulke Ulke sayfasi (varsayilan "Turkiye").
+#' @return Bulunursa liste, bulunamazsa \code{NULL}.
+cbam_default_intensity <- function(cn_kodu, ulke = "Turkiye") {
+  cn <- gsub("[^0-9]", "", as.character(cn_kodu))
+  if (!nzchar(cn)) return(NULL)
+
+  dv <- cbam_default_intensities()
+  dv <- dv[dv$ulke == ulke & !is.na(dv$dogrudan), ]
+  if (nrow(dv) == 0) return(NULL)
+
+  # En uzun onekten en kisaya dogru ara.
+  for (n in seq(nchar(cn), 2)) {
+    aday <- substr(cn, 1, n)
+    i <- match(aday, dv$cn_kodu)
+    if (!is.na(i)) {
+      r <- dv[i, ]
+      return(list(
+        cn_kodu   = r$cn_kodu,
+        eslesme   = if (identical(r$cn_kodu, cn)) "tam" else "onek",
+        ulke      = r$ulke,
+        sektor    = r$sektor,
+        aciklama  = r$aciklama,
+        dogrudan  = r$dogrudan,
+        dolayli   = r$dolayli,
+        toplam    = r$toplam,
+        rota      = r$rota,
+        kaynak    = cbam_kaynak_metni(r$kaynak_belge, r$kaynak_yeri),
+        durum     = trimws(r$durum)
+      ))
+    }
+  }
+  NULL
+}
+
 #' Sektorun fonksiyonel birimi
 #'
 #' Her CBAM malinda miktar "ton urun" olarak olculmez. Bu ayrimi kacirmak
@@ -172,13 +244,16 @@ cbam_product <- function(urun_kodu, sutun = "B") {
   u <- urunler[i, ]
   b <- cbam_benchmark_by_cn(u$cn_kodu, sutun)
 
-  # Yogunluk girilmemis urunler sessizce NA ile hesaba girmemeli.
-  if (is.na(u$varsayilan_yogunluk)) {
+  # Yogunluk artik urun tablosunda tutulmuyor; mevzuatin varsayilan deger
+  # tablosundan gelir. Kendi tahminimizi tasimak, resmi bir deger varken
+  # savunulamazdi.
+  dv <- cbam_default_intensity(u$cn_kodu)
+  if (is.null(dv)) {
     stop(sprintf(paste0(
-      "'%s' icin varsayilan emisyon yogunlugu henuz girilmemis.\n",
+      "'%s' (CN %s) icin varsayilan yogunluk tablosunda kayit yok.\n",
       "  Benchmark resmi tablodan geliyor (%s), ama yogunluk yok.\n",
       "  --yogunluk ile kendi tesis verinizi verin."),
-      urun_kodu, fmt_num(b$benchmark, 3)))
+      urun_kodu, u$cn_kodu, fmt_num(b$benchmark, 3)))
   }
 
   list(
@@ -190,18 +265,18 @@ cbam_product <- function(urun_kodu, sutun = "B") {
     benchmark_sutun     = b$sutun,
     dolayli_kapsamda    = tolower(trimws(u$dolayli_kapsamda)) %in%
                             c("evet", "yes", "true"),
-    varsayilan_yogunluk = u$varsayilan_yogunluk,
+    varsayilan_yogunluk = dv$dogrudan,
     varsayilan_sacilim  = u$varsayilan_sacilim,
     benchmark           = b$benchmark,
-    yogunluk_kaynak     = cbam_kaynak_metni(u$kaynak_belge, u$kaynak_yeri),
+    yogunluk_kaynak     = sprintf("%s, CN %s", dv$kaynak, dv$cn_kodu),
     benchmark_kaynak    = sprintf("%s, CN %s, Column %s",
                                   b$kaynak, b$cn_kodu, b$sutun),
     benchmark_gecerlilik = "",
     # Benchmark artik resmi ve dogrulanmis; yogunluk hala sektor tahmini.
     # Bu yuzden satir bazinda degil, alan bazinda durum tutuluyor.
     benchmark_dogrulandi = identical(b$durum, "dogrulandi"),
-    yogunluk_dogrulandi  = identical(trimws(u$durum), "dogrulandi"),
-    dogrulandi          = identical(trimws(u$durum), "dogrulandi") &&
+    yogunluk_dogrulandi  = identical(dv$durum, "dogrulandi"),
+    dogrulandi          = identical(dv$durum, "dogrulandi") &&
                             identical(b$durum, "dogrulandi"),
     urun_durum          = trimws(u$durum),
     benchmark_durum     = b$durum,

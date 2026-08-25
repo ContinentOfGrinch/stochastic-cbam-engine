@@ -46,6 +46,7 @@ CELEX numarasıyla doğrudan erişim:
 | `GUIDANCE-3` | `Guidance-3-CBAM-methods-calculation-embedded-emissions.pdf` | 2026-08-23 | `162ED275717671F05B88355A9B161726E7A1396F6CE1FC8F72A2F287D204A0D6` |
 | `GUIDANCE-4` | `Guidance-4-CBAM-free-allocation-adjustment.pdf` | 2026-08-23 | `6854641617E77C18F7C752283E56871B180CB8790806CFDE9CBD6EF6F62F8698` |
 | `CBAM-BENCHMARKS-2026-02-06` | `CBAM-Benchmarks-20260206.xlsx` | 2026-08-23 | `B79108B025E697822F0F59DE477FA68066C1C05C228FAE2270CD230AF84E8A7B` |
+| `CBAM-DEFAULT-VALUES-2026-08-06` | `CBAM-Default-Values-20260806.xlsx` | 2026-08-25 | `900583811C7E1194799EB9BDBAD2D6D7E1100F5A7D80A664C1584A8FCE6F9F35` |
 
 Doğrulamak için:
 
@@ -67,7 +68,11 @@ Kaynak: <https://taxation-customs.ec.europa.eu/carbon-border-adjustment-mechanis
 | 1 | `REG-2023-956` | `data.europa.eu/eli/reg/2023/956/2025-10-20` (konsolide) | Ek I (CN kodları, D8), Ek II (dolaylı kapsam listesi), Md. 9 (menşede ödenen, D3), de minimis (D4) | ⬜ |
 | 2 | `CIR-2025-2620` | `data.europa.eu/eli/reg_impl/2025/2620/oj` | **Free Allocation Adjustment Act.** Ek nokta 5 Column A = benchmark değerleri (D7) | ⬜ |
 | 4 | `CIR-2025-2547` | `data.europa.eu/eli/reg_impl/2025/2547/oj` | **Methodology Act.** Md. 3(2) dolaylı emisyon kuralı, fonksiyonel birimler | ⬜ |
-| 5 | `CIR-2025-2621` | `data.europa.eu/eli/reg_impl/2025/2621/oj` | **Default Values Act.** Varsayılan emisyon yoğunlukları | ⬜ |
+> **EUR-Lex erişim notu (2026-08-25):** EUR-Lex kısmen kapalı; hem HTML hem PDF
+> uçları günlük Resmî Gazete indeksine yönlendiriyor. Yukarıdaki üç belge
+> **Komisyon'un kendi sitesinden** (`taxation-customs.ec.europa.eu`) indirildi
+> ve o kaynak çalışıyor. Kalan yasal işlemler için EUR-Lex'in düzelmesi
+> beklenebilir ya da Komisyon sitesindeki sektörel rehberler kullanılabilir.
 
 **Yeni öncelik: 3 numara.** Komisyon benchmark tablosunu hazır XLSX olarak
 yayımlamış — D7'yi kapatmanın en kısa yolu bu. İndirip `data/benchmarks.csv`'ye

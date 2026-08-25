@@ -1,9 +1,9 @@
-urun_kodu,urun_adi,sektor,cn_kodu,dolayli_kapsamda,varsayilan_yogunluk,varsayilan_sacilim,kaynak_belge,kaynak_yeri,durum,not
-celik-hrc,Sicak haddelenmis rulo (HRC),demir-celik,72081000,hayir,1.950,0.20,GUIDANCE-3,s.19-20 (dolayli kapsam),kismen,Yogunluk sektor tahmini - DOGRULANMADI. Benchmark ve dolayli kapsam dogrulandi
-celik-pik,Pik demir,demir-celik,72011011,hayir,1.950,0.20,GUIDANCE-3,s.19-20 (dolayli kapsam),kismen,Yogunluk sektor tahmini - DOGRULANMADI
-celik-kutuk,Celik kutuk (yari mamul),demir-celik,72071190,hayir,1.950,0.20,GUIDANCE-3,s.19-20 (dolayli kapsam),kismen,Yogunluk sektor tahmini - DOGRULANMADI
-demir-sinter,Aglomere demir cevheri (sinter),demir-celik,26011200,evet,,,GUIDANCE-3,s.19-20 (Ek II disinda),kismen,Yogunluk girilmedi. Dolayli emisyon KAPSAMDA
-alu-ham,Ham aluminyum (alasimsiz),aluminyum,76011090,hayir,1.700,0.15,GUIDANCE-3,s.19-20 (dolayli kapsam),kismen,Yogunluk sektor tahmini - DOGRULANMADI
-alu-alasim,Ham aluminyum alasimi,aluminyum,76012080,hayir,1.700,0.15,GUIDANCE-3,s.19-20 (dolayli kapsam),kismen,Yogunluk sektor tahmini - DOGRULANMADI
-cimento-klinker,Cimento klinkeri,cimento,25231000,evet,,,GUIDANCE-3,s.19-20 (Ek II disinda),kismen,BIRIM TON KLINKER. Yogunluk girilmedi
-hidrojen,Hidrojen,hidrojen,28041000,hayir,,,GUIDANCE-3,s.19-20 (Ek II'de),kismen,Yogunluk girilmedi
+urun_kodu,urun_adi,sektor,cn_kodu,dolayli_kapsamda,varsayilan_sacilim,kaynak_belge,kaynak_yeri,durum,not
+celik-hrc,Sicak haddelenmis rulo (HRC),demir-celik,72081000,hayir,0.20,GUIDANCE-3,s.19-20 (dolayli kapsam),dogrulandi,Yogunluk Default Values Act'ten gelir
+celik-pik,Pik demir,demir-celik,72011011,hayir,0.20,GUIDANCE-3,s.19-20 (dolayli kapsam),dogrulandi,Yogunluk Default Values Act'ten gelir
+celik-kutuk,Celik kutuk (yari mamul),demir-celik,72071190,hayir,0.20,GUIDANCE-3,s.19-20 (dolayli kapsam),dogrulandi,Yogunluk Default Values Act'ten gelir
+demir-sinter,Aglomere demir cevheri (sinter),demir-celik,26011200,evet,0.20,GUIDANCE-3,s.19-20 (Ek II disinda),dogrulandi,Dolayli emisyon KAPSAMDA
+alu-ham,Ham aluminyum (alasimsiz),aluminyum,76011090,hayir,0.15,GUIDANCE-3,s.19-20 (dolayli kapsam),dogrulandi,Yogunluk Default Values Act'ten gelir
+alu-alasim,Ham aluminyum alasimi,aluminyum,76012080,hayir,0.15,GUIDANCE-3,s.19-20 (dolayli kapsam),dogrulandi,Yogunluk Default Values Act'ten gelir
+cimento-klinker,Cimento klinkeri,cimento,25231000,evet,0.20,GUIDANCE-3,s.19-20 (Ek II disinda),dogrulandi,BIRIM TON KLINKER
+hidrojen,Hidrojen,hidrojen,28041000,hayir,0.20,GUIDANCE-3,s.19-20 (Ek II'de),dogrulandi,Yogunluk Default Values Act'ten gelir

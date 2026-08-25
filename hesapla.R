@@ -44,9 +44,11 @@ ZORUNLU
   --urun <kod>            Hazir urun tanimi. Kodlar icin: --urunler
   --benchmark <tCO2e/ton> Benchmark'i elle verin
 
-  --yogunluk <tCO2e/ton>  Kendi dogrudan emisyon yogunlugunuz. --cn ile
-                          birlikte ZORUNLU; --urun ile istege bagli
-                          (verirseniz sektor tahmininin yerine gecer).
+  --yogunluk <tCO2e/ton>  Kendi olctugunuz dogrudan emisyon yogunlugunuz.
+                          Vermezseniz mevzuatin VARSAYILAN degeri kullanilir
+                          (Default Values Act). Varsayilanlar bilerek yuksek
+                          secilir - kendi degerinizi vermek genelde lehinizedir.
+  --ulke <ad>             Varsayilan deger tablosundaki ulke (varsayilan: Turkiye)
 
   --sutun <A|B>           Benchmark sutunu (varsayilan: B)
                             B = tum uretim zinciri (cevherden urune kendi
@@ -134,13 +136,14 @@ if ("--urunler" %in% args) {
                 if (is.na(j)) "-" else bicim(b$bm_column_b[j])))
   }
   hazir <- sum(!is.na(u$varsayilan_yogunluk))
-  cat(sprintf("\n  Benchmark'larin tamami resmi AB tablosundan gelir ve"))
-  cat(" dogrulanmistir.\n")
-  cat(sprintf("  Yogunluklar sektor tahminidir (%d/%d girilmis) -",
+  cat("\n  Benchmark'lar : CBAM Benchmarks tablosu (resmi)\n")
+  cat(sprintf("  Yogunluklar   : Default Values Act, Turkiye (%d/%d urunde var)\n",
               hazir, nrow(u)))
-  cat(" kendi tesis verinizi\n  --yogunluk ile verin.\n")
+  cat("\n  Varsayilan yogunluklar mevzuatin ongordugu degerlerdir ve bilerek\n")
+  cat("  yuksek secilir. Kendi olctugunuz degeri --yogunluk ile verirseniz\n")
+  cat("  maliyetiniz buyuk ihtimalle duser.\n")
   cat("\n  Urununuz listede yoksa CN kodunuzla dogrudan hesaplayin:\n")
-  cat("    Rscript hesapla.R --cn <kod> --yogunluk <deger> --miktar <ton>\n\n")
+  cat("    Rscript hesapla.R --cn <kod> --miktar <ton>\n\n")
   quit(status = 0)
 }
 
@@ -165,6 +168,11 @@ while (i <= length(args)) {
     opt[[anahtar]] <- args[i + 1]
     i <- i + 2
   }
+}
+
+sayi_metin <- function(anahtar, varsayilan = NULL) {
+  if (is.null(opt[[anahtar]])) return(varsayilan)
+  trimws(opt[[anahtar]])
 }
 
 sayi <- function(anahtar, varsayilan = NULL) {
@@ -208,18 +216,30 @@ if (!is.null(opt[["cn"]])) {
   bm <- tryCatch(cbam_benchmark_by_cn(opt[["cn"]], sutun), error = hata_ver)
   if (is.null(benchmark)) benchmark <- bm$benchmark
   birim <- bm$birim
-  if (is.null(yogunluk)) {
-    cat(sprintf("HATA: --cn ile --yogunluk de vermelisiniz.\n"))
-    cat(sprintf("      CN %s (%s)\n", bm$cn_kodu,
-                substr(bm$aciklama, 1, 50)))
-    cat(sprintf("      Benchmark Column %s = %s tCO2e/ton olarak bulundu;\n",
-                bm$sutun, fmt_num(bm$benchmark, 3)))
-    cat("      tesisinizin emisyon yogunlugunu bilen tek kisi sizsiniz.\n")
-    quit(status = 1)
-  }
+
   cat(sprintf("\nCN %s | %s\n", bm$cn_kodu, bm$aciklama))
   cat(sprintf("Benchmark Column %s = %s tCO2e/ton | Kaynak: %s\n",
               bm$sutun, fmt_num(bm$benchmark, 3), bm$kaynak))
+
+  # Yogunluk verilmediyse mevzuatin varsayilan degerini kullan. Bu bir
+  # tahmin degil, Default Values Act'in ongordugu degerdir - ve bilerek
+  # muhafazakar secilmistir, cunku olcmemeyi odullendirmemek icin oyledir.
+  if (is.null(yogunluk)) {
+    dv <- cbam_default_intensity(opt[["cn"]], sayi_metin("ulke", "Turkiye"))
+    if (is.null(dv)) {
+      cat("\nHATA: bu CN kodu icin varsayilan yogunluk tablosunda kayit yok.\n")
+      cat("      --yogunluk ile kendi tesis verinizi verin.\n")
+      quit(status = 1)
+    }
+    yogunluk <- dv$dogrudan
+    cat(sprintf("Varsayilan yogunluk = %s tCO2e/ton (%s, dogrudan)\n",
+                fmt_num(dv$dogrudan, 3), dv$ulke))
+    cat(sprintf("  Kaynak: %s | CN %s (%s eslesme)\n",
+                dv$kaynak, dv$cn_kodu, dv$eslesme))
+    cat("  !! Bu mevzuatin VARSAYILAN degeridir, tesisinizin degeri degildir.\n")
+    cat("     Varsayilanlar bilerek yuksek secilir. Kendi olctugunuz degeri\n")
+    cat("     --yogunluk ile verirseniz maliyetiniz buyuk ihtimalle duser.\n")
+  }
 } else if (!is.null(opt[["urun"]])) {
   referans <- tryCatch(
     cbam_product(tolower(trimws(opt[["urun"]])), sutun),

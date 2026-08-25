@@ -29,7 +29,8 @@ Piyasadaki kapalı kutu (black-box) danışmanlık araçlarının aksine, bu alt
 * **Kapsam:** CBAM'in yürürlükteki tüm sektörleri — demir-çelik, alüminyum,
   çimento, gübre, hidrojen (570 CN kodu). Elektrik ayrı hesap yolu gerektirdiği
   için henüz kapsam dışı.
-* **Referans veri:** Avrupa Komisyonu resmî benchmark tablosu (Şubat 2026)
+* **Referans veri:** Avrupa Komisyonu resmî tabloları — benchmark (Şubat 2026)
+  ve varsayılan emisyon değerleri (Ağustos 2026)
 
 ## Hızlı Başlangıç
 
@@ -42,26 +43,33 @@ Kendi rakamlarınızı girin, yıllık CBAM maliyetinizi hesaplayın:
 CN kodunuz gümrük beyanınızda yazar; benchmark resmî AB tablosundan gelir:
 
 ```bash
-Rscript hesapla.R --cn 72081000 --yogunluk 1.95 --miktar 250000 \
+Rscript hesapla.R --cn 72081000 --miktar 250000 \
                   --yil 2030 --karbon-fiyati 80 --kur 48
 ```
 
 ```
 CN 72081000 | Flat-rolled products of iron or non-alloy steel...
 Benchmark Column B = 1,370 tCO2e/ton | Kaynak: CBAM-BENCHMARKS-2026-02-06
+Varsayilan yogunluk = 2,428 tCO2e/ton (Turkiye, dogrudan)
+  Kaynak: CBAM-DEFAULT-VALUES-2026-08-06, Turkiye sayfasi | CN 7208
+  !! Bu mevzuatin VARSAYILAN degeridir, tesisinizin degeri degildir.
 
 HESAP
-  Gomulu emisyon        250.000 x 1,950          =       487.500 tCO2e
+  Gomulu emisyon        250.000 x 2,428          =       607.000 tCO2e
   Ucretsiz tahsisat     1,370 x 250.000 x 0,515  =      -176.388 tCO2e
                         (0,515 = 1 - CBAM faktoru 0,485)
   --------------------------------------------------------------------
-  SERTIFIKA YUKUMLULUGU                          =       311.113 tCO2e
-                                                   (emisyonun %63,8'i)
+  SERTIFIKA YUKUMLULUGU                          =       430.613 tCO2e
+                                                   (emisyonun %70,9'i)
 
-  CBAM MALIYETI         311.113 x 80,00 EUR      =    24.889.000 EUR
-                        x 48,00 TRY/EUR          = 1.194.672.000 TRY
-  Ton basina yuk                                 =         99,56 EUR/ton
+  CBAM MALIYETI         430.613 x 80,00 EUR      =    34.449.000 EUR
+                        x 48,00 TRY/EUR          = 1.653.552.000 TRY
+  Ton basina yuk                                 =        137,80 EUR/ton
 ```
+
+**Hiçbir sayı bizim tahminimiz değil.** Benchmark Komisyon'un benchmark
+tablosundan, emisyon yoğunluğu Default Values Act'ten, phase-in faktörü
+Rehber No. 4'ten geliyor — hepsi çıktıda kaynağıyla gösteriliyor.
 
 `--sutun` benchmark sütununu seçer ve **fark büyüktür**:
 
@@ -110,7 +118,7 @@ Bu araç neyi bilmediğini söyler. Bir sonuca güvenmeden önce şunlara bakın
 | **`--mensede-odenen` kullanmayın** | Menşede ödenen karbonun mevzuattaki birimi (tCO2e mi, fiilen ödenen fiyat mı) henüz doğrulanmadı. |
 | **De minimis eşiği doğrulanmadı** | 50 tCO2e mi, 50 ton mal mı — teyit edilmedi. Küçük sevkiyatları etkiler. |
 | **Elektrik kapsam dışı** | Ücretsiz tahsisatı sıfır, birimi MWh; ayrı bir hesap yolu gerektirir. |
-| **Emisyon yoğunlukları tahmindir** | `data/urunler.csv` içindeki varsayılanlar sektör tahminidir, resmî değer değildir. **Kendi ölçtüğünüz değeri `--yogunluk` ile verin.** |
+| **Varsayılan yoğunluklar tesisinize ait değildir** | Default Values Act'ten gelen resmî değerlerdir ve bilerek **yüksek** seçilmişlerdir. **Kendi ölçtüğünüz değeri `--yogunluk` ile verin** — maliyetiniz büyük ihtimalle düşer. |
 | **Uzak yıl belirsizlik kuyruğu** | Karbon fiyatı Geometrik Brown Hareketi ile modellenir; ortalamaya dönüş ve AB Piyasa İstikrar Rezervi yoktur. Uzak yıllarda %95 üst sınırı gerçekçi olmayan fiyatlara uzanır. Bütçe için medyanı ve yakın yılları kullanın. |
 | **Çimento ve gübrede birim farklı** | Ton ürün değil: çimento *ton klinker*, gübre *kg azot*. Araç uyarı basar ama dönüşümü sizin yapmanız gerekir. |
 
@@ -129,26 +137,27 @@ Benchmark Column B = 1,370 tCO2e/ton
 Kaynak: CBAM-BENCHMARKS-2026-02-06, CN 72081000, Column B
 ```
 
-**570 CN kodunun benchmark değeri** resmî AB tablosundan gelir ve doğrulanmıştır
-(`data/benchmarks.csv`). Emisyon yoğunlukları ise tesise özgüdür — araç
-bunları ayrı ayrı işaretler:
+İki referans tablosu da resmî ve doğrulanmış durumda:
+
+| Tablo | Kayıt | Kaynak |
+|---|---|---|
+| `data/benchmarks.csv` | 570 CN kodu | CBAM Benchmarks tablosu (06.02.2026) |
+| `data/varsayilan_yogunluk.csv` | 283 CN kodu, Türkiye | Default Values Act, CIR (EU) 2025/2621 |
+
+Resmî AB belgeleri `data-raw/mevzuat/` altında **değiştirilmemiş halde** depoda
+durur, SHA256'larıyla birlikte. `data/` altındaki CSV tabloları bunlardan
+aktarılmıştır ve her satır `kaynak_belge` + `kaynak_yeri` sütunlarıyla belgeye
+geri bağlanır.
+
+Bir değerin kaynağı yoksa araç bunu **çıktıda açıkça söyler** ve hesabı
+sessizce sürdürmez:
 
 ```
 !! DIKKAT: Bu hesapta DOGRULANMAMIS deger kullanildi.
-   Benchmark  : resmi AB tablosundan, DOGRULANDI.
-   Yogunluk   : sektor tahmini, DOGRULANMADI.
 ```
 
-Resmî AB belgeleri `data-raw/mevzuat/` altında **değiştirilmemiş halde**
-depoda durur; `data/` altındaki CSV tabloları bunlardan elle aktarılmıştır ve
-her satır `kaynak_belge` + `kaynak_yeri` sütunlarıyla belgeye geri bağlanır.
-
-Henüz doğrulanmamış değerler çıktıda açıkça işaretlenir:
-
-```
-!! DIKKAT: Bu hesapta DOGRULANMAMIS referans degerleri kullanildi.
-   Degerler sektor tahminidir, resmi AB degeri DEGILDIR.
-```
+> Bu kural test altındadır: `durum=dogrulandi` diyen her satırın
+> `kaynak_belge` alanı dolu olmak **zorundadır**.
 
 > Referans veri paketi sürümlenir (`data/VERSION`) ve her çıktıda basılır.
 > Araç canlı veri çekmez — bu bir kısıt değil, tekrarlanabilirlik koşuludur:
@@ -197,7 +206,7 @@ cbam_var(sim, level = 0.95)
 Test ve demo:
 
 ```bash
-Rscript tests/test_engine.R                   # 147 test
+Rscript tests/test_engine.R                   # 161 test
 Rscript analysis/01_demo_turkiye_celik.R      # EAF vs BF-BOF senaryo demosu
 ```
 
@@ -259,7 +268,8 @@ hesapla.R         Komut satırı hesap makinesi (--yardim, --urunler, --rapor)
 research/         ARAŞTIRMA EKİ — hesap makinesi buraya hiç dokunmaz
   mrio.R          Leontief tersi, E_CBAM/E_MRIO kapsam farkı
 data/             İşlenmiş referans veri (CSV, her satır kaynağıyla)
-  urunler.csv     Ürün kataloğu, CN kodları, varsayılan yoğunluklar
+  urunler.csv     Ürün kataloğu → CN kodu eşlemesi
+  varsayilan_yogunluk.csv  Default Values Act, Türkiye (283 CN kodu)
   benchmarks.csv  AB ETS ürün benchmark'ları
   VERSION         Veri paketi sürümü
 data-raw/
@@ -267,7 +277,7 @@ data-raw/
   exiobase/       Büyük MRIO matrisleri (versiyonlanmaz)
   firma/          Firma düzeyi veri (versiyonlanmaz)
 tests/
-  test_engine.R   147 test (base R, harici test paketi gerektirmez)
+  test_engine.R   161 test (base R, harici test paketi gerektirmez)
 LICENSE                        AGPL-3.0 tam metni
 LICENSE-ADDITIONAL-TERMS.md    Atıf ek şartı (AGPL §7(b)) + marka notu
 NOTICE                         Telif, atıf ve veri kaynağı bildirimleri
