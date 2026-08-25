@@ -118,6 +118,40 @@ teknik terimler için en az yoruma açık olan odur.
 
 ---
 
+## ⏰ Veri tazeliği — bu projenin en olası çürüme yolu
+
+Referans tabloları Komisyon tarafından **habersiz revize edilir.** Amonyak
+örneği bunu gösterdi: değerler Aralık 2025'te yayımlandı, Ağustos 2026'da
+değişti. Güncellemeyen bir araç sessizce eskir — hesap doğru çalışmaya devam
+eder, sadece cevap yanlış olur.
+
+> **Bu, bir rakip aracın bugün içinde olduğu durum.** Bizim tek farkımız daha
+> iyi hesap yapmamız değil; sayının yanında tarih ve kaynak olması. O avantaj
+> ancak güncellersek sürer.
+
+**Kontrol sıklığı: en az 3 ayda bir.** Nereye bakılacak:
+
+| Ne | Nerede |
+|---|---|
+| Varsayılan değerler | Komisyon CBAM sayfası → `CBAM Default Values` XLSX |
+| Benchmark'lar | Aynı sayfa → `CBAM Benchmarks` XLSX |
+| Sürüm bilgisi | İndirilen dosyanın `Version History` sayfası |
+
+**Güncelleme adımları:**
+
+1. Yeni dosyayı indir, SHA256'sını al
+2. Yukarıdaki tabloda eski SHA256 ile karşılaştır — **aynıysa değişmemiştir**
+3. Farklıysa: `Version History` sayfasından hangi tüzükle revize edildiğini oku
+4. `data/*.csv` tablolarını yeniden üret, `kaynak_belge` tarihini güncelle
+5. `data/VERSION` → yeni etiket (`params-YYYY.MM`)
+6. `Rscript tests/test_engine.R` — veri bütünlüğü testleri geçmeli
+7. Değişen değerleri CHANGELOG'a yaz: kullanıcı neyin değiştiğini görmeli
+
+**Eski sürümü silme.** `data-raw/mevzuat/` altında tarihli adıyla kalsın;
+geçmiş bir beyanın hangi değerlerle yapıldığı sorulduğunda gerekir.
+
+---
+
 ## Belge nasıl eklenir
 
 1. Belgeyi bu klasöre indir, **dosya adını değiştirme, içeriğine dokunma**

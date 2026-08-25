@@ -333,9 +333,17 @@ print.cbam_estimate <- function(x, ...) {
   cat("\n"); cat(line, "\n")
   cat(sprintf("stochastic-cbam-engine | CBAM faktoru %%%s (Reg. (EU) 2023/956)\n",
               fmt_num(100 * i$cbam_factor, 1)))
-  if (!is.null(r)) {
-    cat(sprintf("Referans veri paketi: %s%s\n", r$veri_surumu,
-                if (isTRUE(r$dogrulandi)) "" else "  [DOGRULANMAMIS]"))
+  # Veri surumu HER ZAMAN gorunur olmali. Referans tablolari Komisyon
+  # tarafindan habersiz revize ediliyor; kullanicinin hangi tarihli veriyle
+  # hesap yaptigini gormesi, sayinin kendisi kadar onemli.
+  surum <- tryCatch(cbam_data_version(), error = function(e) NULL)
+  if (!is.null(surum)) {
+    cat(sprintf("Referans veri paketi: %s%s\n", surum,
+                if (!is.null(r) && !isTRUE(r$dogrulandi)) {
+                  "  [DOGRULANMAMIS]"
+                } else {
+                  ""
+                }))
   }
   if (!is.null(x$simulation)) {
     cat(sprintf("Tohum: %s | Parametreler gosterim amaclidir, dogrulayin.\n",

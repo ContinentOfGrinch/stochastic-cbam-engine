@@ -611,6 +611,16 @@ expect("rapor hesap adimlarini gosteriyor",
 expect("rapor dagilim grafigi iceriyor",
        grepl("<svg", rapor_html, fixed = TRUE) &&
          length(gregexpr("<rect", rapor_html)[[1]]) > 5)
+# Veri surumu her ciktida gorunmeli - referans tablolari habersiz revize
+# ediliyor ve kullanici hangi tarihli veriyle hesap yaptigini gormeli.
+expect("veri surumu referanssiz hesapta da basiliyor",
+       { e <- cbam_estimate(1000, 1.9, 1.288, year = 2030,
+                            uncertainty = FALSE)
+         cikti <- capture.output(print(e))
+         any(grepl("Referans veri paketi", cikti, fixed = TRUE)) })
+expect("veri surumu kaynak tarihlerini tasiyor",
+       grepl("2026", cbam_data_version(), fixed = TRUE))
+
 expect("rapor provenans bloku iceriyor",
        grepl("Rastgele tohum", rapor_html, fixed = TRUE) &&
          grepl("2026", rapor_html, fixed = TRUE))
