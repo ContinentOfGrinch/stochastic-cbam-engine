@@ -203,18 +203,23 @@ cbam_default_intensity <- function(cn_kodu, ulke = "Turkiye") {
 
 #' Sektorun fonksiyonel birimi
 #'
-#' Her CBAM malinda miktar "ton urun" olarak olculmez. Bu ayrimi kacirmak
-#' sessizce yanlis bir sonuc uretir - hesap calisir, sayi makul gorunur,
-#' ama tamamen baska bir seyi olcer.
+#' Cimento ve gubrede operatorun emisyonu IZLEYIP RAPORLADIGI birim ton urun
+#' degildir: cimentoda ton klinker, gubrede kg azot (Rehber No. 3, s.20).
 #'
-#' Kaynak: Rehber No. 3, s.20 - "Where the functional unit is not the tonne
-#' of product, i.e. in cement products and fertilisers products, the specific
-#' embedded emissions must be reported as tonne CO2e per functional unit
-#' (tonnes of clinker and kg of nitrogen respectively)."
+#' ANCAK yukumluluk hesabi ton urun uzerinden yapilir. Rehber No. 1, s.15:
+#'   "SEE values must be expressed per tonne ... while the value per
+#'    functional unit (where different from tonnes of good) is to be
+#'    transformed in value per tonne of good applying the formulas for
+#'    specific compositions in Annex III of the Methodology Act."
+#'
+#' Nitekim hem benchmark tablosu hem varsayilan deger tablosu ton basina
+#' degerler tasir. Dolayisiyla bu araca miktar TON URUN olarak girilir;
+#' fonksiyonel birim, kendi emisyon verisi fonksiyonel birim cinsinden olan
+#' kullaniciyi donusturme yukumlulugu konusunda uyarmak icin tutulur.
 #'
 #' @param sektor Benchmark tablosundaki sektor adi.
-#' @return Liste: \code{birim} (metin) ve \code{standart} (mantiksal; birim
-#'   ton urun ise TRUE).
+#' @return Liste: \code{birim} (izleme birimi) ve \code{standart} (mantiksal;
+#'   izleme birimi ton urun ise TRUE).
 cbam_fonksiyonel_birim <- function(sektor) {
   s <- tolower(trimws(as.character(sektor)))
   if (identical(s, "cement")) {

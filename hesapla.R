@@ -217,6 +217,7 @@ hata_ver <- function(e) {
 }
 
 birim <- NULL
+yogunluk_etiketi <- "dogrudan"
 
 if (!is.null(opt[["cn"]])) {
   # CN kodu yolu: benchmark resmi tablodan gelir, yogunlugu kullanici verir.
@@ -238,9 +239,25 @@ if (!is.null(opt[["cn"]])) {
       cat("      --yogunluk ile kendi tesis verinizi verin.\n")
       quit(status = 1)
     }
-    yogunluk <- dv$dogrudan
-    cat(sprintf("Varsayilan yogunluk = %s tCO2e/ton (%s, dogrudan)\n",
-                fmt_num(dv$dogrudan, 3), dv$ulke))
+    # Dolayli emisyon yalnizca Ek I'de olup Ek II'de olmayan mallarda
+    # sayilir (cimento, gubre, sinter - bkz. D6). Bunu ayri bir listeden
+    # degil verinin kendisinden okuyoruz: Komisyon, dolayli emisyonun
+    # sayilmadigi bir mal icin dolayli varsayilan deger yayimlamaz.
+    dolayli_var <- !is.na(dv$dolayli)
+    yogunluk <- if (dolayli_var) dv$toplam else dv$dogrudan
+    yogunluk_etiketi <- if (dolayli_var) "dogrudan + dolayli" else "dogrudan"
+
+    if (dolayli_var) {
+      cat(sprintf("Varsayilan yogunluk = %s tCO2e/ton (%s, TOPLAM)\n",
+                  fmt_num(dv$toplam, 3), dv$ulke))
+      cat(sprintf("  dogrudan %s + dolayli %s\n",
+                  fmt_num(dv$dogrudan, 3), fmt_num(dv$dolayli, 3)))
+      cat("  Bu sektorde dolayli (elektrik) emisyon CBAM kapsamindadir.\n")
+    } else {
+      cat(sprintf("Varsayilan yogunluk = %s tCO2e/ton (%s, dogrudan)\n",
+                  fmt_num(dv$dogrudan, 3), dv$ulke))
+      cat("  Bu sektorde dolayli emisyon CBAM kapsami disindadir (Ek II).\n")
+    }
     cat(sprintf("  Kaynak: %s | CN %s (%s eslesme)\n",
                 dv$kaynak, dv$cn_kodu, dv$eslesme))
     cat("  !! Bu mevzuatin VARSAYILAN degeridir, tesisinizin degeri degildir.\n")
@@ -294,7 +311,8 @@ sonuc <- tryCatch(
     n_sims             = sayi("simulasyon", 50000),
     seed               = sayi("tohum", 2026),
     reference          = referans,
-    functional_unit    = birim
+    functional_unit    = birim,
+    ei_label           = yogunluk_etiketi
   ),
   error = function(e) {
     cat(sprintf("HATA: %s\n", conditionMessage(e)))

@@ -65,6 +65,7 @@ cbam_estimate <- function(quantity,
                           inflation_eu = 0.02,
                           reference = NULL,
                           functional_unit = NULL,
+                          ei_label = "dogrudan",
                           ...) {
   stopifnot(is.numeric(quantity), is.numeric(ei_direct), is.numeric(benchmark))
   if (length(quantity) != 1 || length(ei_direct) != 1 || length(benchmark) != 1) {
@@ -146,6 +147,7 @@ cbam_estimate <- function(quantity,
         theta_sdlog = theta_sdlog, base_year = base_year,
         horizon = max(year - base_year, 0), n_sims = n_sims, seed = seed,
         inflation_tr = inflation_tr, inflation_eu = inflation_eu,
+        ei_label = ei_label,
         functional_unit = if (is.null(functional_unit)) {
           list(birim = "ton urun", standart = TRUE)
         } else {
@@ -181,23 +183,26 @@ print.cbam_estimate <- function(x, ...) {
   }
   cat("\n")
 
-  # Cimento ve gubrede birim ton urun degildir; bunu kacirmak sessizce
-  # yanlis bir sonuc uretir, o yuzden gorunur ve gurultulu.
+  # Cimento ve gubrede operatorun IZLEME birimi ton urun degildir, ama
+  # yukumluluk hesabi ton urun uzerinden yapilir. Kullanicinin elindeki
+  # emisyon verisi izleme biriminde ise once donusturmesi gerekir.
   fb <- i$functional_unit
   if (!isTRUE(fb$standart)) {
     cat(sprintf(paste0(
-      "!! BIRIM UYARISI: bu sektorde miktar TON URUN olarak olculmez.\n",
-      "   Fonksiyonel birim: %s\n",
-      "   --miktar ve --yogunluk degerlerini bu birimde verdiginizden\n",
-      "   emin olun; aksi halde sonuc sessizce yanlis olur.\n",
-      "   Kaynak: Rehber No. 3, s.20\n\n"), fb$birim))
+      "!! BIRIM NOTU: bu sektorde emisyon %s basina IZLENIR ve\n",
+      "   raporlanir. Yukumluluk hesabi ise TON URUN uzerinden yapilir\n",
+      "   (Rehber No. 1, s.15) - bu araca da miktar TON URUN girilir.\n",
+      "   Emisyon yogunlugunuz %s basina ise, once ton urune cevirin:\n",
+      "   Methodology Act Ek III, bilesim formulleri.\n\n"),
+      fb$birim, fb$birim))
   }
 
   cat("GIRDILER\n")
-  cat(sprintf("  Ihracat miktari        : %15s %s/yil\n",
-              fmt_num(i$quantity), fb$birim))
-  cat(sprintf("  Emisyon yogunlugu      : %15s tCO2e/%s  (dogrudan)\n",
-              fmt_num(i$ei_direct, 3), fb$birim))
+  cat(sprintf("  Ihracat miktari        : %15s ton urun/yil\n",
+              fmt_num(i$quantity)))
+  cat(sprintf("  Emisyon yogunlugu      : %15s tCO2e/ton  (%s)\n",
+              fmt_num(i$ei_direct, 3),
+              if (is.null(i$ei_label)) "dogrudan" else i$ei_label))
   if (!is.null(r)) {
     cat(sprintf("  %sKaynak: %s\n", strrep(" ", 27), r$yogunluk_kaynak))
   }

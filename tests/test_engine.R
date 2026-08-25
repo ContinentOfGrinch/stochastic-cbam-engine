@@ -419,6 +419,21 @@ expect("8 haneli kod 4 haneli kayitla onek eslesir",
          d$cn_kodu == "7208" && d$eslesme == "onek" })
 expect("celikte dolayli deger yok (D6 ile tutarli)",
        is.na(cbam_default_intensity("7208")$dolayli))
+
+# D6, varsayilan deger tablosunda da gorunur: Komisyon dolayli emisyonun
+# sayilmadigi bir mal icin dolayli varsayilan yayimlamaz. Bu, dolayli
+# kapsamini ayri bir listeden degil verinin kendisinden okumayi mumkun kilar.
+expect("gubrede dolayli deger var (kapsamda)",
+       { d <- cbam_default_intensity("28141000")
+         !is.na(d$dolayli) && d$dolayli > 0 })
+expect("gubrede toplam = dogrudan + dolayli",
+       { d <- cbam_default_intensity("28141000")
+         abs(d$toplam - (d$dogrudan + d$dolayli)) < 1e-9 })
+expect("gubre satirlarinin cogunda dolayli var, celikte neredeyse hicbirinde",
+       { dv <- cbam_default_intensities()
+         g <- dv[dv$sektor == "Fertilisers", ]
+         s <- dv[dv$sektor == "Iron and steel", ]
+         mean(!is.na(g$dolayli)) > 0.8 && mean(!is.na(s$dolayli)) < 0.05 })
 expect("varsayilan deger benchmark'tan buyuk (aksi halde yukumluluk cikmaz)",
        { d <- cbam_default_intensity("7208")
          b <- cbam_benchmark_by_cn("72081000")
@@ -447,12 +462,12 @@ expect("standart disi birim hesapta uyari uretir",
                             uncertainty = FALSE,
                             functional_unit = cbam_fonksiyonel_birim("Cement"))
          cikti <- capture.output(print(e))
-         any(grepl("BIRIM UYARISI", cikti, fixed = TRUE)) })
+         any(grepl("BIRIM NOTU", cikti, fixed = TRUE)) })
 expect("standart birimde uyari cikmaz",
        { e <- cbam_estimate(250000, 1.95, 1.37, year = 2030,
                             uncertainty = FALSE)
          cikti <- capture.output(print(e))
-         !any(grepl("BIRIM UYARISI", cikti, fixed = TRUE)) })
+         !any(grepl("BIRIM NOTU", cikti, fixed = TRUE)) })
 expect("durum degerleri gecerli",
        all(trimws(c(urunler$durum, benchmarks$durum)) %in%
              c("dogrulandi", "dogrulanmadi", "kismen")))
