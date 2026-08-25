@@ -100,6 +100,25 @@ istek gitmez. Bu test altındadır: alıcının verisi hiçbir yere ulaşmaz.
 `--urun` ile referans değerler otomatik gelir; üstüne `--yogunluk` verirseniz
 kendi tesis veriniz referans değerin yerine geçer.
 
+## Bilinen Sınırlar
+
+Bu araç neyi bilmediğini söyler. Bir sonuca güvenmeden önce şunlara bakın:
+
+| Sınır | Etkisi |
+|---|---|
+| **Öncüller (precursors) modellenmiyor** | Araç ürünü **tek üretim süreci** sayar. Girdi (slab, kütük, öncül) satın alıyorsanız, satın aldığınız malın gömülü emisyonu hesaba **girmez** ve sonuç eksik çıkar. Cevherden kendi üreten entegre tesisler için geçerlidir. |
+| **`--mensede-odenen` kullanmayın** | Menşede ödenen karbonun mevzuattaki birimi (tCO2e mi, fiilen ödenen fiyat mı) henüz doğrulanmadı. |
+| **De minimis eşiği doğrulanmadı** | 50 tCO2e mi, 50 ton mal mı — teyit edilmedi. Küçük sevkiyatları etkiler. |
+| **Elektrik kapsam dışı** | Ücretsiz tahsisatı sıfır, birimi MWh; ayrı bir hesap yolu gerektirir. |
+| **Emisyon yoğunlukları tahmindir** | `data/urunler.csv` içindeki varsayılanlar sektör tahminidir, resmî değer değildir. **Kendi ölçtüğünüz değeri `--yogunluk` ile verin.** |
+| **Uzak yıl belirsizlik kuyruğu** | Karbon fiyatı Geometrik Brown Hareketi ile modellenir; ortalamaya dönüş ve AB Piyasa İstikrar Rezervi yoktur. Uzak yıllarda %95 üst sınırı gerçekçi olmayan fiyatlara uzanır. Bütçe için medyanı ve yakın yılları kullanın. |
+| **Çimento ve gübrede birim farklı** | Ton ürün değil: çimento *ton klinker*, gübre *kg azot*. Araç uyarı basar ama dönüşümü sizin yapmanız gerekir. |
+
+**Bu bir beyan aracı değildir.** CBAM raporu/beyanı üretmez; maruziyet hesabı ve
+karar desteği için tasarlanmıştır. Çelişki halinde resmî mevzuat metni geçerlidir.
+
+Doğrulama durumunun tamamı: [`data-raw/mevzuat/MEVZUAT_DOGRULAMA.md`](data-raw/mevzuat/MEVZUAT_DOGRULAMA.md)
+
 ## Kaynak Şeffaflığı
 
 Hesabın kullandığı her referans değer **kaynağını taşır** ve çıktıda gösterilir:
