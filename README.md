@@ -2,6 +2,7 @@
 
 [![testler](https://github.com/ContinentOfGrinch/stochastic-cbam-engine/actions/workflows/test.yml/badge.svg)](https://github.com/ContinentOfGrinch/stochastic-cbam-engine/actions/workflows/test.yml)
 [![lisans: AGPL v3](https://img.shields.io/badge/lisans-AGPL--3.0--or--later-blue.svg)](LICENSE)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22116999.svg)](https://doi.org/10.5281/zenodo.22116999)
 
 > Türk ihracatçılar için açık kaynaklı CBAM maliyet hesaplayıcısı.
 > Her sayı kaynağını gösterir; tek tahmin yerine olasılık dağılımı verir.
@@ -323,6 +324,42 @@ Katmanlar ayrıdır: `R/` altındaki motor saf hesap yapar ve hiçbir yere yazma
 - [ ] Çoklu sektör desteği (çimento, alüminyum, gübre, elektrik, hidrojen)
 - [ ] Duyarlılık analizi (Sobol indeksleri)
 - [ ] Görselleştirme katmanı ve raporlama şablonu
+
+## Atıf
+
+Araç [Zenodo'da arşivlenmiştir](https://doi.org/10.5281/zenodo.22116999).
+Arşiv kalıcıdır: depo taşınsa ya da silinse bile DOI çözülmeye devam eder.
+
+```
+İlhan, S. (2026). stochastic-cbam-engine: A Stochastic Framework for Carbon
+Border Adjustment Mechanism Exposure Analysis (Sürüm 1.0.0) [Yazılım].
+Zenodo. https://doi.org/10.5281/zenodo.22117000
+```
+
+```bibtex
+@software{ilhan_stochastic_cbam_2026,
+  author    = {İlhan, Selahattin},
+  title     = {stochastic-cbam-engine: A Stochastic Framework for Carbon
+               Border Adjustment Mechanism Exposure Analysis},
+  version   = {1.0.0},
+  year      = {2026},
+  publisher = {Zenodo},
+  doi       = {10.5281/zenodo.22117000},
+  url       = {https://doi.org/10.5281/zenodo.22117000},
+  orcid     = {0009-0007-4824-752X}
+}
+```
+
+**Hangi DOI'yi kullanmalı:**
+
+| DOI | Ne zaman |
+|---|---|
+| `10.5281/zenodo.22117000` | Tam olarak **1.0.0**'ı kullandıysanız — yeniden üretilebilirlik için doğru olan budur |
+| `10.5281/zenodo.22116999` | Sürümden bağımsız olarak **projeye** atıf veriyorsanız; her zaman en son sürüme çözülür |
+
+Künye [`CITATION.cff`](CITATION.cff) dosyasında da makine tarafından
+okunabilir biçimde durur — GitHub'daki **"Cite this repository"** düğmesi
+bunu kullanır.
 
 ## Lisans ve Katkı
 

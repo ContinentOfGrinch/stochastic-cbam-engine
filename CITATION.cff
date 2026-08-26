@@ -25,7 +25,15 @@ authors:
 repository-code: "https://github.com/ContinentOfGrinch/stochastic-cbam-engine"
 license: AGPL-3.0-or-later
 version: 1.0.0
-date-released: "2026-08-25"
+date-released: "2026-08-26"
+doi: "10.5281/zenodo.22117000"
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.22117000"
+    description: "Bu sürümün (1.0.0) arşiv kaydı"
+  - type: doi
+    value: "10.5281/zenodo.22116999"
+    description: "Concept DOI - her zaman en son sürüme çözülür"
 keywords:
   - CBAM
   - carbon border adjustment mechanism
