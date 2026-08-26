@@ -70,7 +70,7 @@ yoğunluğu resmî tablolardan otomatik gelir ve çıktıda kaynağıyla göster
 
 ### Kalite
 
-- 161 test, 4 ortamda geçiyor (Linux, Windows, macOS, R 4.2)
+- 177 test, 4 ortamda geçiyor (Linux, Windows, macOS, R 4.2)
 - Sürekli entegrasyon: GitHub Actions
 - **Sıfır çalışma zamanı bağımlılığı** — yalnızca R `base` ve `stats`; bu bir
   iddia değil, test edilen bir kural
@@ -81,20 +81,23 @@ yoğunluğu resmî tablolardan otomatik gelir ve çıktıda kaynağıyla göster
 - **Öncüller (precursors) modellenmiyor.** Araç ürünü tek üretim süreci sayar.
   Girdi satın alıyorsanız satın aldığınız malın gömülü emisyonu hesaba girmez.
   Cevherden kendi üreten entegre tesisler için geçerlidir.
-- **`--mensede-odenen` kullanılmamalıdır** — D3 doğrulanmadı.
+- **Menşede ödenen karbon fiyatı elle verilmelidir.** `--odenen-karbon-fiyati`
+  ve `--sertifika-referans-fiyati` birlikte kullanılır; araç Türkiye ETS
+  fiyatını kendiliğinden bilmez.
 - **Elektrik kapsam dışı** — ayrı hesap yolu gerektirir.
-- **Emisyon yoğunlukları sektör tahminidir** — kendi ölçtüğünüz değeri verin.
+- **Varsayılan yoğunluklar tesisinizi temsil etmez.** Resmî tablodan gelirler
+  ve mevzuat gereği yüksek seçilmişlerdir; kendi ölçtüğünüz değeri verin.
 - **Uzak yıl belirsizlik kuyruğu güvenilmez** — karbon fiyatında ortalamaya
   dönüş modellenmiyor.
 - **Bu bir beyan aracı değildir.** Çelişki halinde resmî mevzuat metni geçerlidir.
 
 ### Yol haritası
 
-1. Default Values Act (CIR 2025/2621) → resmî emisyon yoğunlukları
-2. EUA vadeli fiyat eğrisi çapası
-3. **Öncül zinciri** (2.0.0 hedefi)
-4. Ortalamaya dönen karbon fiyatı süreci
-5. D3 — Türkiye ETS düşümü
+1. EUA vadeli fiyat eğrisi çapası
+2. **Öncül zinciri** (2.0.0 hedefi)
+3. Ortalamaya dönen karbon fiyatı süreci
+4. Türkiye ETS düşümünün incelikleri
+5. Tarayıcıda çalışan sürüm (WebR)
 
 ### Lisans
 

@@ -243,15 +243,22 @@ Bu, projenin uydurduğu "üretim rotası" taksonomisinin (EAF/BF-BOF) mevzuatın
 modeliyle örtüşmediğini gösterdi. Model CN koduna geçirildi; kullanıcı
 `--cn` ile gümrük beyanındaki kodu veriyor, benchmark resmî tablodan geliyor.
 
-### Hâlâ doğrulanmamış: emisyon yoğunlukları
+### Emisyon yoğunlukları ✅ çözüldü
 
-`urunler.csv`'deki `varsayilan_yogunluk` değerleri **sektör tahminidir.**
-Bunlar mevzuattan gelmez — tesise özgüdür. İki yol var:
-1. Kullanıcı kendi ölçtüğü değeri `--yogunluk` ile verir (doğru yol)
-2. Default Values Act (CIR (EU) 2025/2621) varsayılan değerleri girilir
+**Önceki durum:** `urunler.csv`'de `varsayilan_yogunluk` diye bir sütun vardı
+ve içindeki değerler **projenin kendi sektör tahminiydi** — mevzuattan
+gelmiyordu. Çıktı bunu *"Yoğunluk: sektör tahmini"* diye işaretliyordu.
 
-Araç bunu her çıktıda ayrı ayrı işaretliyor: *"Benchmark: doğrulandı /
-Yoğunluk: sektör tahmini"*.
+**Çözüm:** Sütun kaldırıldı, tahminler silindi. Yoğunluklar artık
+`data/varsayilan_yogunluk.csv`'den geliyor: **283 CN kodu, Türkiye,
+Default Values Act — CIR (EU) 2026/1740 (Sürüm 2, 06.08.2026).**
+
+`urunler.csv` bugün yalnızca ürün kodu → CN kodu eşlemesi tutuyor.
+**Projenin uydurduğu hiçbir sayı kalmadı.**
+
+Kullanıcının kendi ölçtüğü değeri `--yogunluk` ile vermesi hâlâ önerilen
+yoldur: resmî varsayılanlar mevzuat gereği ihtiyatlı (yüksek) seçilmiştir,
+dolayısıyla gerçek tesis değeri genellikle daha düşük maliyet verir.
 
 ---
 
